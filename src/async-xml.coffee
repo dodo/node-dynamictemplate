@@ -1,14 +1,9 @@
-require 'colors'
-util = require('util')
-util.orginspect = util.inspect
-util.inspect = require('eyes').inspector(stream: null, hexy:{format:'fours'})
-
-
 { EventEmitter } = require 'events'
 
-
+# helper
 
 indent = ({level, opts:{pretty}}) ->
+    return "" unless pretty
     pretty = "  " if pretty is on
     output = ""
     for i in [0...level]
@@ -25,6 +20,7 @@ new_attrs = (attrs) ->
     strattrs.unshift '' if strattrs.length
     strattrs.join ' '
 
+# main logic
 
 new_tag = (name, opts) ->
     buffer = []
@@ -62,6 +58,8 @@ new_tag = (name, opts) ->
                     return
             throw new Error("this shouldn't happen D:")
     return tag
+
+# classes
 
 class Tag extends EventEmitter
     constructor: (@name, {@level, @opts}) ->
@@ -103,54 +101,8 @@ class Builder extends EventEmitter
     end: () =>
         @emit 'end' unless @pending.length
 
-    # classes
-    Tag:Tag
 
+# exports
 
-
-
-#########################################################################
-
-
-xml = new Builder pretty:'.   '
-
-xml.on 'data',   console.log
-xml.on 'end', -> console.log "done."
-
-global = xml.tag('global')()
-test = global.tag('test') version:3, alt:"info", border:0
-test.tag('top').end center:yes
-foo = test.tag('foo')(bar:'moo', border:0)
-
-global.end()
-xml.end()
-
-foo.tag('first').end()
-bar = foo.tag('bar') x:2
-foo.tag('center').end args:true
-foo.tag('last').end()
-xxx = foo.tag('xxx') ccc:yes
-
-bar.end()
-xxx.tag('pok').end()
-foo.end()
-
-xxx.tag('asd').end()
-
-xxx.tag('happy').end dodo:null
-test.end()
-
-xxx.end()
-
-
-
-# html template engine
-
-# div = (args...) -> tag('div') args...
-#
-#
-# d = div class:"foo",  ->
-#     # do smth
-#
-# console.log d
+module.exports = { Tag, Builder }
 

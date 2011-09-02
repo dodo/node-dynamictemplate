@@ -8,9 +8,12 @@
 , "engines": {"node": "0.4.x"}
 , "keywords": ["async", "xml", "generation", "stream"]
 , "scripts": {
+    "test": "node-waf build && nodeunit test",
     "preinstall": "#preinstall DO NOTHING",
     "install": "node-waf configure build",
     "update": "node-waf build"}
 , "dependencies": {
     "coffee-script": ">= 1.1.2"}
+, "devDependencies": {
+    "nodeunit": ">= 0.5.4"}
 }
