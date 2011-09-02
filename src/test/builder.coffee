@@ -97,3 +97,27 @@ module.exports =
 
         xxx.end()
 
+    delayed: (æ) ->
+        xml = new Builder
+        xml.on 'end', æ.done
+        xml.on 'data', (tag) -> æ.equal results.shift(), tag
+        results = [
+            '<grass>'
+            '<dog/>'
+            '<cat/>'
+            '</grass>'
+        ]
+        dog = null
+        grass = xml.tag('grass')()
+        setTimeout ( ->
+            dog = grass.tag('dog')()
+        ), 2
+        setTimeout ( ->
+            grass.tag('cat').end()
+            dog.end()
+        ), 4
+        setTimeout ( ->
+            grass.end()
+        ),3
+
+
