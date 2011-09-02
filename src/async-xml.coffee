@@ -1,5 +1,5 @@
 
 { Tag, Builder } = require './xml'
-{ Generator } = require './generator'
+Template = require './template'
 
-module.exports = { Tag, Builder, Generator }
+module.exports = { Tag, Builder, Template }

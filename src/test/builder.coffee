@@ -1,18 +1,30 @@
-require 'colors'
-util = require('util')
-util.orginspect = util.inspect
-util.inspect = require('eyes').inspector(stream: null, hexy:{format:'fours'})
-
-
 { Tag, Builder } = require '../async-xml'
 
 
 module.exports =
+
     simple: (æ) ->
         xml = new Builder
+        xml.on 'end', æ.done
         xml.once 'data', (tag) -> æ.equal "<test/>", tag
-        xml.tag('test')
-        do æ.done
+        xml.tag('test').end()
+        xml.end()
+
+
+    text: (æ) ->
+        xml = new Builder
+        xml.on 'end', æ.done
+        xml.on 'data', (tag) -> æ.equal results.shift(), tag
+        results = [
+            '<test>'
+            'in here'
+            '</test>'
+        ]
+        test = xml.tag('test')()
+        test.text "in here"
+        test.end()
+        xml.end()
+
 
     attributes: (æ) ->
         xml = new Builder
@@ -20,6 +32,7 @@ module.exports =
         xml.once 'data', (tag) -> æ.equal "<test a=1 b=\"b\" c/>", tag
         xml.tag('test').end a:1, b:'b', c:null
         do æ.done
+
 
     'default pretty': (æ) ->
         xml = new Builder pretty:on
@@ -35,6 +48,7 @@ module.exports =
         apple.end()
         do æ.done
 
+
     'opts pretty': (æ) ->
         xml = new Builder pretty:"→ → →"
         xml.on 'end', æ.done
@@ -48,6 +62,55 @@ module.exports =
         wurm = apple.tag('wurm')()
         apple.end()
         wurm.end()
+
+
+    children: (æ) ->
+        xml = new Builder
+        xml.on 'end', æ.done
+        xml.on 'data', (tag) -> æ.equal results.shift(), tag
+        results = [
+            '<apple>'
+            '<wurm color="red">'
+            '<seed/>'
+            '</wurm>'
+            '</apple>'
+        ]
+        apple = xml.tag('apple') ->
+            @$tag('wurm') color:'red', ->
+                @tag('seed').end()
+            apple.end()
+        xml.end()
+
+
+    'async children': (æ) ->
+        xml = new Builder
+        xml.on 'end', æ.done
+        xml.on 'data', (tag) -> æ.equal results.shift(), tag
+        results = [
+            '<apple>'
+            '<wurm color="red">'
+            '<seed>'
+            '<is dead="true"/>'
+            '</seed>'
+            '</wurm>'
+            '</apple>'
+        ]
+
+        seed = null
+        apple = xml.tag('apple') ->
+            @$tag('wurm') color:'red', ->
+                seed = @tag('seed')()
+            apple.end()
+
+        setTimeout ( ->
+            æ.notEqual seed, null
+            return unless seed
+            seed.tag('is').end dead:yes
+            seed.end()
+        ), 3
+
+        xml.end()
+
 
     complex: (æ) ->
         xml = new Builder
@@ -96,6 +159,7 @@ module.exports =
         test.end()
 
         xxx.end()
+
 
     delayed: (æ) ->
         xml = new Builder
