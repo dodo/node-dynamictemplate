@@ -106,8 +106,8 @@ class Tag extends EventEmitter
     $tag: (name) =>
         sync_tag.call this, name
 
-    text: (content) =>
-        return unless content
+    text: (content, force) =>
+        return unless content or force
         if @headers
             @emit 'data', "#{indent this}#{@headers}>"
             delete @headers

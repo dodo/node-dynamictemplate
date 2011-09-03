@@ -4,7 +4,7 @@
 module.exports =
 
     simple: (æ) ->
-        xml = new Template schema:'html5', ->
+        xml = new Template ->
             do @$tag('test')
         xml.on 'end', æ.done
         xml.on 'data', (tag) -> æ.equal "<test/>", tag
