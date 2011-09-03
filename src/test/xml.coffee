@@ -10,6 +10,20 @@ module.exports =
         xml.tag('test').end()
         xml.end()
 
+    'escape': (æ) ->
+        xml = new Builder
+        xml.on 'end', æ.done
+        xml.on 'data', (tag) -> æ.equal results.shift(), tag
+        results = [
+            '<test>'
+            '&lt;&quot;lind&quot;&amp;wurm&gt;'
+            '</test>'
+        ]
+        test = xml.tag('test')()
+        test.text '<"lind"&wurm>', escape:yes
+        test.end()
+        do æ.done
+
 
     text: (æ) ->
         xml = new Builder

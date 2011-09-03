@@ -72,7 +72,7 @@ class Template extends EventEmitter
             if opts.self_closing is on or opts.self_closing.match @name
                 end_tag.call this, args...
             else
-                @text "", true if @headers
+                @text "", force:yes if @headers
                 end_tag.call this, args...
 
         @xml.on 'data', (args...) =>

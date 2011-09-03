@@ -106,12 +106,19 @@ class Tag extends EventEmitter
     $tag: (name) =>
         sync_tag.call this, name
 
-    text: (content, force) =>
+    text: (content, {force, escape} = {}) =>
         return unless content or force
+        if escape
+            content = String(content)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+
         if @headers
             @emit 'data', "#{indent this}#{@headers}>"
             delete @headers
-        @emit 'data', "#{indent this}#{content}"
+        @emit 'data', "#{indent this}#{content}" if content
 
     end: () =>
         if @headers

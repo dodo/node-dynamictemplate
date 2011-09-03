@@ -17,7 +17,7 @@ module.exports =
                 @$body ->
                     @$div class:'test', "lala"
                     @ul ->
-                        for data in content
+                        content.forEach (data) =>
                             @$li.end null, data
                         @end()
 
