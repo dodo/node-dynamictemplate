@@ -16,10 +16,9 @@ module.exports =
             @$html ->
                 @$body ->
                     @$div class:'test', "lala"
-                    @ul ->
+                    @$ul ->
                         content.forEach (data) =>
                             @$li(null, data)
-                        @end()
 
         xml.on 'end', æ.done
         xml.on 'data', (tag) -> æ.equal results.shift(), tag
