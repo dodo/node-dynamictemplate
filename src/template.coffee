@@ -1,5 +1,5 @@
 { EventEmitter } = require 'events'
-{ Tag, Builder } = require './xml'
+{ Builder } = require './xml'
 
 
 schema =
@@ -33,14 +33,8 @@ self_closing =
 fill_with_tags = (tag, tags) ->
     tags.split(' ').forEach (name) ->
         return unless name
-        tag[    name] = (args...) -> tag.tag( name).call tag, args...
-        tag["$"+name] = (args...) -> tag.$tag(name).call tag, args...
-
-        tag[    name].end = (args...) -> tag.tag( name).end args...
-        tag["$"+name].end = (args...) -> tag.$tag(name).end args...
-
-        tag["$"+name].self = tag[name].self = tag
-
+        tag[    name] = (args...) -> tag.tag( name, args...)
+        tag["$"+name] = (args...) -> tag.$tag(name, args...)
     return tag
 
 
@@ -51,23 +45,24 @@ class Template extends EventEmitter
         opts.schema = schema[opts.schema ? 'xml']?()
         opts.end ?= on
 
-        ExtendedBuilder = ->
-            fill_with_tags this, opts.schema
-            b = Builder.apply this, arguments
-            b
+        class ExtendedBuilder
+            constructor: ->
+                fill_with_tags this, opts.schema
+                Builder.apply this, arguments
         for name, method of Builder::
             ExtendedBuilder::[name] = method
 
         @xml = new ExtendedBuilder
         @end = @xml.end
         Tag = @xml.Tag
-        @xml.Tag = ->
-            fill_with_tags this, opts.schema
-            t = Tag.apply this, arguments
-            t
+        class ExtendedTag
+            constructor: ->
+                fill_with_tags this, opts.schema
+                Tag.apply this, arguments
+        @xml.Tag = @xml.opts.Tag = ExtendedTag
         for name, method of Tag::
-            @xml.Tag::[name] = method
-        end_tag = @xml.Tag::end
+            ExtendedTag::[name] = method
+        end_tag = Tag::end
         @xml.Tag::end = (args...) ->
             if opts.self_closing is on or opts.self_closing.match @name
                 end_tag.call this, args...

@@ -19,7 +19,7 @@ module.exports =
             '&lt;&quot;lind&quot;&amp;wurm&gt;'
             '</test>'
         ]
-        test = xml.tag('test')()
+        test = xml.tag('test')
         test.text '<"lind"&wurm>', escape:yes
         test.end()
         do æ.done
@@ -34,7 +34,7 @@ module.exports =
             'in here'
             '</test>'
         ]
-        test = xml.tag('test')()
+        test = xml.tag('test')
         test.text "in here"
         test.end()
         xml.end()
@@ -44,7 +44,7 @@ module.exports =
         xml = new Builder
         xml.on 'end', æ.done
         xml.once 'data', (tag) -> æ.equal "<test a=1 b=\"b\" c/>", tag
-        xml.tag('test').end a:1, b:'b', c:null
+        xml.tag('test', a:1, b:'b', c:null).end()
         do æ.done
 
 
@@ -57,7 +57,7 @@ module.exports =
             '  <wurm/>'
             '</apple>'
         ]
-        apple = xml.tag('apple')()
+        apple = xml.tag('apple')
         apple.tag('wurm').end()
         apple.end()
         do æ.done
@@ -72,8 +72,8 @@ module.exports =
             '→ → →<wurm/>'
             '</apple>'
         ]
-        apple = xml.tag('apple')()
-        wurm = apple.tag('wurm')()
+        apple = xml.tag('apple')
+        wurm = apple.tag('wurm')
         apple.end()
         wurm.end()
 
@@ -89,8 +89,8 @@ module.exports =
             '</wurm>'
             '</apple>'
         ]
-        apple = xml.tag('apple') ->
-            @$tag('wurm') color:'red', ->
+        apple = xml.tag 'apple', ->
+            @$tag 'wurm', color:'red', ->
                 @tag('seed').end()
             apple.end()
         xml.end()
@@ -111,15 +111,15 @@ module.exports =
         ]
 
         seed = null
-        apple = xml.tag('apple') ->
-            @$tag('wurm') color:'red', ->
-                seed = @tag('seed')()
+        apple = xml.tag 'apple', ->
+            @$tag 'wurm', color:'red', ->
+                seed = @tag('seed')
             apple.end()
 
         setTimeout ( ->
             æ.notEqual seed, null
             return unless seed
-            seed.tag('is').end dead:yes
+            seed.tag('is', dead:yes).end()
             seed.end()
         ), 3
 
@@ -149,19 +149,19 @@ module.exports =
             '</global>'
         ]
 
-        global = xml.tag('global')()
-        test = global.tag('test') version:3, alt:"info", border:0
-        test.tag('top').end center:yes
-        foo = test.tag('foo')(bar:'moo', border:0)
+        global = xml.tag('global')
+        test = global.tag('test', version:3, alt:"info", border:0)
+        test.tag('top', center:yes).end()
+        foo = test.tag('foo', bar:'moo', border:0)
 
         global.end()
         xml.end()
 
         foo.tag('first').end()
-        bar = foo.tag('bar') x:2
-        foo.tag('center').end args:true
+        bar = foo.tag('bar', x:2)
+        foo.tag('center', args:true).end()
         foo.tag('last').end()
-        xxx = foo.tag('xxx') ccc:yes
+        xxx = foo.tag('xxx', ccc:yes)
 
         bar.end()
         xxx.tag('pok').end()
@@ -169,7 +169,7 @@ module.exports =
 
         xxx.tag('asd').end()
 
-        xxx.tag('happy').end dodo:null
+        xxx.tag('happy', dodo:null).end()
         test.end()
 
         xxx.end()
@@ -186,9 +186,9 @@ module.exports =
             '</grass>'
         ]
         dog = null
-        grass = xml.tag('grass')()
+        grass = xml.tag('grass')
         setTimeout ( ->
-            dog = grass.tag('dog')()
+            dog = grass.tag('dog')
         ), 2
         setTimeout ( ->
             grass.tag('cat').end()

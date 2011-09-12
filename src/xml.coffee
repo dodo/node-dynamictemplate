@@ -1,110 +1,104 @@
 { EventEmitter } = require 'events'
-
-# helper
-
-indent = ({level, opts:{pretty}}) ->
-    return "" unless pretty
-    pretty = "  " if pretty is on
-    output = ""
-    for i in [0...level]
-        output += pretty
-    return output
+{ deep_merge, indent, new_attrs } = require './util'
 
 
-new_attrs = (attrs = {}) ->
-    strattrs = for k, v of attrs
-        if v?
-            v = "\"#{v}\"" unless typeof v is 'number'
-            "#{k}=#{v}"
-        else "#{k}"
-    strattrs.unshift '' if strattrs.length
-    strattrs.join ' '
-
-# main logic
-
-new_tag = (name, opts) ->
+new_tag = (name, attrs, children, opts) ->
+    unless typeof attrs is 'object'
+        [opts, children, attrs] = [children, attrs, {}]
+    else
+        # if attrs is an object and you want to use opts, make children null
+        attrs ?= {}
+    opts ?= {}
     buffer = []
-    @pending.push tag = new @Tag name, opts
-    tag.self.Tag = @Tag
-    tag.self.on 'data', pipe = (data) =>
+    opts.level = @level+1
+    opts = deep_merge @opts, opts # possibility to overwrite existing opts, like pretty
+    @pending.push tag = new @Tag name, attrs, children, opts
+    tag.up = => # set parent
+        tag.end.apply tag, arguments
+        this
+
+    tag.on 'data', pipe = (data) =>
         if @pending[0] is tag
             @emit 'data', data
         else
             buffer.push data
 
-    tag.self.on 'end', on_end = (data) =>
+    tag.on 'end', on_end = (data) =>
         buffer.push data unless data is undefined
         if @pending[0] is tag
-            if tag.self.pending.length
-                (pender = tag.self.pending[0].self).once 'end', =>
+            if tag.pending.length
+                (pender = tag.pending[0]).once 'end', =>
                     on_end()
                     @emit 'end' unless @pending.length
             else
-                if tag.self.buffer.length
-                    buffer = buffer.concat tag.self.buffer
-                    tag.self.buffer = []
+                if tag.buffer.length
+                    buffer = buffer.concat tag.buffer
+                    tag.buffer = []
                 @pending = @pending.slice(1)
-                tag.self.removeListener 'data', pipe
-                tag.self.removeListener 'end', on_end
+                tag.removeListener 'data', pipe
+                tag.removeListener 'end', on_end
                 for data in buffer
                     @emit 'data', data
         else
             for known, i in @pending
                 if tag is known
                     @pending = @pending.slice(0,i).concat @pending.slice i+1
-                    before = @pending[i-1].self
+                    before = @pending[i-1]
                     before.buffer = before.buffer.concat buffer
-                    tag.self.removeListener 'data', pipe
-                    tag.self.removeListener 'end', on_end
+                    tag.removeListener 'data', pipe
+                    tag.removeListener 'end', on_end
                     return
             throw new Error("this shouldn't happen D:")
     return tag
 
 
-sync_tag = (name) ->
-    tag = @tag(name)
-    get_attrs = (attrs, children) ->
-        [children, attrs] = [attrs, {}] if typeof attrs is 'function'
+execute_children_scope = (children, {direct} = {}) ->
         if typeof children is 'function'
-            return tag attrs, ->
+            if direct
                 children.call this
-                tag.self.end()
-        else
-            return tag attrs, ->
-                @text children
-                tag.self.end()
-    get_attrs.self = tag.self
-    get_attrs.end = get_attrs
-
-# classes
-
-class Tag extends EventEmitter
-    constructor: (@name, {@level, @opts}) ->
-        @Tag = Tag
-        @buffer = [] # after this tag all children emitted data
-        @pending = [] # no open child tag
-        @attrs.self = this
-        @attrs.end = (args...) => @attrs(args...).end()
-        return @attrs
-
-    attrs: (attrs, children) =>
-        [children, attrs] = [attrs, {}] if typeof attrs is 'function'
-        @headers = "<#{@name}#{new_attrs attrs}"
-        if typeof children is 'function'
-            process.nextTick =>
-                children.call this
+            else
+                process.nextTick =>
+                    children.call this
         else if children isnt undefined
             @text children
-        return this
 
-    tag: (name) =>
+
+sync_tag = (name, attrs, children, opts) ->
+    unless typeof attrs is 'object'
+        [opts, children, attrs] = [children, attrs, {}]
+    else
+        attrs ?= {}
+    opts ?= {}
+    self_ending_children_scope = ->
+        execute_children_scope.call this, children, direct:yes
+        @end()
+    @tag.call this, name, attrs, self_ending_children_scope, opts
+
+
+class Tag extends EventEmitter
+    constructor: (@name, @attrs, children, @opts) ->
+        unless typeof attrs is 'object'
+            [@opts, children, @attrs] = [children, @attrs, {}]
+        else
+            # if attrs is an object and you want to use opts, make children null
+            @attrs ?= {}
+            @opts ?= {}
+        @level = @opts.level
+        @Tag = @opts.Tag or Tag # inherit (maybe) extended tag class
+        @buffer = [] # after this tag all children emitted data
+        @pending = [] # no open child tag
+        @headers = "<#{@name}#{new_attrs @attrs}"
+        execute_children_scope.call this, children
+
+    $tag: =>
+        # sync tag, - same as normal tag, but closes it automaticly
+        sync_tag.apply this, arguments
+
+    tag: =>
         if @headers
             @emit 'data', "#{indent this}#{@headers}>"
             delete @headers
-        new_tag.call this, name, opts:@opts, level:@level+1
-
-    $tag: (name) =>
-        sync_tag.call this, name
+        new_tag.apply this, arguments
 
     text: (content, {force, escape} = {}) =>
         return unless content or force
@@ -120,6 +114,8 @@ class Tag extends EventEmitter
             delete @headers
         @emit 'data', "#{indent this}#{content}" if content
 
+    up: -> null # this node has no parent
+
     end: () =>
         if @headers
             data = "#{indent this}#{@headers}/>"
@@ -130,21 +126,26 @@ class Tag extends EventEmitter
 
 class Builder extends EventEmitter
     constructor: (@opts = {}) ->
-        @Tag = Tag
         @buffer = [] # for child output
         @pending = [] # no open child tag
+        @opts.Tag ?= Tag
         @opts.pretty ?= off
         @level = @opts.level ? 0
+        @Tag = @opts.Tag or Tag
 
-    tag: (name) =>
-        new_tag.call this, name, opts:@opts, level:@level
+    tag: =>
+        @level--
+        tag = new_tag.apply this, arguments
+        @level++
+        tag
 
-    $tag: (name) =>
-        sync_tag.call this, name
+    $tag: (args...) =>
+        # sync tag, - same as normal tag, but closes it automaticly
+        sync_tag.apply this, arguments
 
     end: (data) =>
         if @pending.length
-            @pending[0].self.once 'end', => @end(data)
+            @pending[0].once 'end', => @end(data)
         else
             @emit 'data', "#{indent this}#{data}" if data
             @emit 'end'

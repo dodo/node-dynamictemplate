@@ -5,7 +5,7 @@ module.exports =
 
     simple: (æ) ->
         xml = new Template ->
-            do @$tag('test')
+            @$tag('test')
         xml.on 'end', æ.done
         xml.on 'data', (tag) -> æ.equal "<test/>", tag
 
@@ -18,7 +18,7 @@ module.exports =
                     @$div class:'test', "lala"
                     @ul ->
                         content.forEach (data) =>
-                            @$li.end null, data
+                            @$li(null, data)
                         @end()
 
         xml.on 'end', æ.done
