@@ -24,6 +24,28 @@ module.exports =
         test.end()
         do æ.done
 
+    chain: (æ) ->
+        xml = new Builder
+        xml.on 'end', æ.done
+        xml.on 'data', (tag) -> æ.equal results.shift(), tag
+        results = [
+            '<test>'
+            '<items>'
+            '<item value="a"/>'
+            '<item value="b"/>'
+            '<item value="c"/>'
+            '</items>'
+            '</test>'
+        ]
+        xml
+            .tag('test')
+                .tag('items')
+                    .tag('item', value:'a').up()
+                    .tag('item', value:'b').up()
+                    .tag('item', value:'c').up()
+                .up()  # test
+            .up()  # items
+        .end() # xml
 
     text: (æ) ->
         xml = new Builder
