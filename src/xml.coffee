@@ -108,11 +108,13 @@ class Tag extends EventEmitter
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
+        this
 
         if @headers
             @emit 'data', "#{indent this}#{@headers}>"
             delete @headers
         @emit 'data', "#{indent this}#{content}" if content
+        this
 
     up: -> null # this node has no parent
 
@@ -122,6 +124,7 @@ class Tag extends EventEmitter
         else
             data = "#{indent this}</#{@name}>"
         @emit 'end', data
+        this
 
 
 class Builder extends EventEmitter
@@ -149,6 +152,7 @@ class Builder extends EventEmitter
         else
             @emit 'data', "#{indent this}#{data}" if data
             @emit 'end'
+        this
 
 
 # exports
