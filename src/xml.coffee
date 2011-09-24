@@ -100,6 +100,15 @@ class Tag extends EventEmitter
             delete @headers
         new_tag.apply this, arguments
 
+    attr: (key, value) =>
+        if typeof key is 'string'
+            return @attrs[key] if @attrs[key] and not value
+            @attrs[key] = value
+        else
+            @attrs[k] = v for own k, v of key
+        @headers = "<#{@name}#{new_attrs @attrs}" if @headers
+        this
+
     text: (content, {force, escape} = {}) =>
         return unless content or force
         if escape

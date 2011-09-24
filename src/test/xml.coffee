@@ -47,6 +47,22 @@ module.exports =
             .up()  # items
         .end() # xml
 
+    attr: (æ) ->
+        xml = new Builder
+        xml.on 'end', æ.done
+        xml.on 'data', (tag) -> æ.equal results.shift(), tag
+        results = [
+            '<test>'
+            '<item value="b" a=1 b=2 c=3/>'
+            '</test>'
+        ]
+        item = xml.tag('test').tag('item', value:'a')
+        æ.equal item.attr('value'), "a"
+        item.attr(a:1, b:2, c:3)
+            .attr('value', "b")
+        æ.equal item.attr('value'), "b"
+        item.up().up().end()
+
     text: (æ) ->
         xml = new Builder
         xml.on 'end', æ.done
