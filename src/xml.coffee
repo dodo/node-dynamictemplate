@@ -87,6 +87,7 @@ class Tag extends EventEmitter
         @Tag = @opts.Tag or Tag # inherit (maybe) extended tag class
         @buffer = [] # after this tag all children emitted data
         @pending = [] # no open child tag
+        @closed = false
         @headers = "<#{@name}#{new_attrs @attrs}"
         execute_children_scope.call this, children
 
@@ -128,12 +129,21 @@ class Tag extends EventEmitter
     up: -> null # this node has no parent
 
     end: () =>
+        @closed = yes
         if @headers
             data = "#{indent this}#{@headers}/>"
+            @closed = 'self'
         else
             data = "#{indent this}</#{@name}>"
         @emit 'end', data
         this
+
+    toString: =>
+        "<#{@name}#{new_attrs @attrs}" +
+            if @closed is 'self'
+                "/>"
+            else if @closed
+                "></#{@name}>" # FIXME children ? content ?
 
 
 class Builder extends EventEmitter
