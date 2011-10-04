@@ -88,6 +88,7 @@ class Tag extends EventEmitter
         @buffer = [] # after this tag all children emitted data
         @pending = [] # no open child tag
         @closed = false
+        @content = ""
         @headers = "<#{@name}#{new_attrs @attrs}"
         execute_children_scope.call this, children
 
@@ -118,12 +119,11 @@ class Tag extends EventEmitter
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
-        this
-
         if @headers
             @emit 'data', "#{indent this}#{@headers}>"
             delete @headers
         @emit 'data', "#{indent this}#{content}" if content
+        @content = content
         this
 
     up: -> null # this node has no parent
@@ -143,7 +143,7 @@ class Tag extends EventEmitter
             if @closed is 'self'
                 "/>"
             else if @closed
-                "></#{@name}>" # FIXME children ? content ?
+                ">#{@content}</#{@name}>" # FIXME children ?
 
 
 class Builder extends EventEmitter
