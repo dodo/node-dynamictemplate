@@ -106,8 +106,11 @@ class Tag extends EventEmitter
         if typeof key is 'string'
             return @attrs[key] if @attrs[key] and not value
             @attrs[key] = value
+            @emit 'attr', this, key, value
         else
-            @attrs[k] = v for own k, v of key
+            for own k, v of key
+                @attrs[k] = v
+                @emit 'attr', this, k, v
         @headers = "<#{@name}#{new_attrs @attrs}" if @headers
         this
 
