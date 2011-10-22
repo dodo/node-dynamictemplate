@@ -70,13 +70,17 @@ module.exports =
         xml.on 'data', (tag) -> æ.equal results.shift(), tag
         results = [
             '<test>'
+            'rofl'
+            'lol'
             '<item value="a" a=1 b=2 c=3/>'
             '</test>'
         ]
         test = xml.tag('test')
+        test.text("rofl")
         item = test.tag('item', value:'a', a:1, b:2, c:3)
+        test.text("lol")
         item.up().up().end()
-        æ.equal test.toString(), '<test></test>'
+        æ.equal test.toString(), '<test>lol</test>'
         æ.equal item.toString(), '<item value="a" a=1 b=2 c=3/>'
 
     text: (æ) ->
@@ -90,6 +94,7 @@ module.exports =
         ]
         test = xml.tag('test')
         test.text "in here"
+        æ.equal test.text(), "in here"
         test.end()
         xml.end()
 

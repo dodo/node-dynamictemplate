@@ -127,8 +127,14 @@ class Tag extends EventEmitter
         @headers = "<#{@name}#{new_attrs @attrs}" if @headers
         this
 
-    text: (content, {force, escape} = {}) =>
-        return unless content or force
+    text: (content, opts = {}) =>
+        return @content unless content? or opts.force
+        @write(content, opts)
+        @content = content
+        @emit 'text', this, content
+        this
+
+    write: (content, {escape} = {}) =>
         if escape
             content = String(content)
                 .replace(/&/g, '&amp;')
@@ -139,10 +145,10 @@ class Tag extends EventEmitter
             @emit 'data', "#{indent this}#{@headers}>"
             delete @headers
         @emit 'data', "#{indent this}#{content}" if content
-        @content = content
-        this
+        @content += content
+        true
 
-    up: -> null # this node has no parent
+    up: () -> null # this node has no parent
 
     end: () =>
         @closed = yes
