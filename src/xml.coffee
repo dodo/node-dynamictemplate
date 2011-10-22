@@ -1,6 +1,6 @@
 { EventEmitter } = require 'events'
 { deep_merge, indent, new_attrs } = require './util'
-
+EVENTS = ['add', 'attr', 'attr:remove', 'text', 'remove']
 
 new_tag = (name, attrs, children, opts) ->
     unless typeof attrs is 'object'
@@ -10,6 +10,7 @@ new_tag = (name, attrs, children, opts) ->
         attrs ?= {}
     opts ?= {}
     buffer = []
+    pipe = {}
     opts.level = @level+1
     opts = deep_merge @opts, opts # possibility to overwrite existing opts, like pretty
     @pending.push tag = new @Tag name, attrs, children, opts
@@ -19,11 +20,15 @@ new_tag = (name, attrs, children, opts) ->
         tag.end.apply tag, arguments if opts.end
         this
 
-    tag.on 'data', pipe = (data) =>
+    tag.on 'data', pipe.data = (data) =>
         if @pending[0] is tag
             @emit 'data', data
         else
             buffer.push data
+
+    EVENTS.forEach (event) =>
+        tag.on event, pipe[event] = (args...) =>
+            @emit event, args...
 
     tag.on 'end', on_end = (data) =>
         buffer.push data unless data is undefined
@@ -37,8 +42,10 @@ new_tag = (name, attrs, children, opts) ->
                     buffer = buffer.concat tag.buffer
                     tag.buffer = []
                 @pending = @pending.slice(1)
-                tag.removeListener 'data', pipe
+                tag.removeListener 'data', pipe.data
                 tag.removeListener 'end', on_end
+                for event in EVENTS
+                    tag.removeListener event, pipe[event]
                 for data in buffer
                     @emit 'data', data
         else
