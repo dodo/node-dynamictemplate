@@ -102,8 +102,8 @@ module.exports =
     attributes: (æ) ->
         xml = new Builder
         xml.on 'end', æ.done
-        xml.once 'data', (tag) -> æ.equal "<test a=1 b=\"b\" c/>", tag
-        xml.tag('test', a:1, b:'b', c:null).end()
+        xml.once 'data', (tag) -> æ.equal "<test a=1 b=\"b\" c d=\"true\"/>", tag
+        xml.tag('test', a:1, b:'b', c:null, d:true).end()
         do æ.done
 
 
