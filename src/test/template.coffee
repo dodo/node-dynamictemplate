@@ -13,7 +13,7 @@ module.exports =
 
     html5: (æ) ->
         content = ["a", "b", "c"]
-        xml = new Template schema:'html5', ->
+        xml = new Template schema:5, ->
             @$html ->
                 @body ->
                     file = path.join(__dirname,"..","..","..","filename")
@@ -28,6 +28,7 @@ module.exports =
         xml.on 'end', æ.done
         xml.on 'data', (tag) -> æ.equal results.shift(), tag
         results = [
+            '<!DOCTYPE html>'
             '<html>'
             '<body>'
             '<div class="test">'

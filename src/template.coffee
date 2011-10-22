@@ -49,6 +49,39 @@ self_closing =
     'frameset': -> "#{do self_closing.xhtml}"
     'transitional': -> "#{do self_closing.xhtml}"
 
+doctype =
+    'xml': ({encoding}) -> "<?xml version=\"1.0\" encoding=\"#{encoding}\" ?>"
+    'html' : -> "<!DOCTYPE html>"
+    'html5': -> "#{do doctype.html}"
+    'mobile' : ->
+        '<!DOCTYPE html PUBLIC "-//WAPFORUM//DTD '+
+        'XHTML Mobile 1.2//EN" '+
+        '"http://www.openmobilealliance.org/tech/DTD/xhtml-mobile12.dtd">'
+    'html-ce': ->
+        '<!DOCTYPE html PUBLIC '+
+        '"-//W3C//DTD XHTML 1.0 Transitional//EN" '+
+        '"ce-html-1.0-transitional.dtd">'
+    'strict'  : ->
+        '<!DOCTYPE html PUBLIC '+
+        '"-//W3C//DTD XHTML 1.0 Strict//EN" '+
+        '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">'
+    'xhtml1.1': ->
+        '<!DOCTYPE html PUBLIC '+
+        '"-//W3C//DTD XHTML 1.1//EN" '+
+        '"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">'
+    'xhtml'   : ->
+        '<!DOCTYPE html PUBLIC '+
+        '"-//W3C//DTD XHTML Basic 1.1//EN" '+
+        '"http://www.w3.org/TR/xhtml-basic/xhtml-basic11.dtd">'
+    'frameset': ->
+        '<!DOCTYPE html PUBLIC '+
+        '"-//W3C//DTD XHTML 1.0 Frameset//EN" '+
+        '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-frameset.dtd">'
+    'transitional': ->
+        '<!DOCTYPE html PUBLIC '+
+        '"-//W3C//DTD XHTML 1.0 Transitional//EN" '+
+        '"http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'
+
 # schema aliases
 aliases =
     'default':'xml'
@@ -78,7 +111,9 @@ fill_with_tags = (tag, tags) ->
 class Template extends EventEmitter
     constructor: (opts = {}, template) ->
         [template, opts] = [opts, {}] if typeof opts is 'function'
-        s = aliases[opts.schema] or opts.schema or 'xml'
+        opts.encoding ?= 'utf-8'
+        schema_input = opts.schema
+        s = aliases[schema_input] or schema_input or 'xml'
         opts.self_closing = self_closing[s]?(opts)
         opts.schema = schema[s]?(opts)
         opts.end ?= on
@@ -114,6 +149,8 @@ class Template extends EventEmitter
             @emit 'end', args...
 
         process.nextTick =>
+            if schema_input? and (dt = doctype[s]?(opts))
+                @xml.emit 'data', dt
             if typeof template is 'function'
                 template.call @xml
                 @end() if opts.end
