@@ -1,6 +1,6 @@
 { "name": "dynamictemplate"
 , "description": "async & dynamic templating engine"
-, "version": "0.0.0"
+, "version": "0.1.0"
 , "homepage": "https://github.com/dodo/node-dynamictemplate"
 , "author": "dodo (https://github.com/dodo)"
 , "repository": {"type": "git", "url": "git://github.com/dodo/node-dynamictemplate.git"}
@@ -14,7 +14,7 @@
     "update": "node-waf build"}
 , "dependencies": {
     "bufferstream": ">= 0.4.8",
-    "asyncxml": ">= 0.0.0",
+    "asyncxml": ">= 0.1.0",
     "browserify": "1.6.1",
     "scopify": ">= 0.1.0",
     "uglify-js": ">= 1.0.7",
