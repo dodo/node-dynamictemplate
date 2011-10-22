@@ -154,21 +154,31 @@ class Tag extends EventEmitter
     up: () -> null # this node has no parent
 
     end: () =>
-        @closed = yes
-        if @headers
-            data = "#{indent this}#{@headers}/>"
-            @closed = 'self'
+        if not @closed
+            if @headers
+                data = "#{indent this}#{@headers}/>"
+                @closed = 'self'
+            else
+                data = "#{indent this}</#{@name}>"
+                @closed = yes
+            @emit 'end', data
+        else if @closed is 'removed'
+            @emit 'end'
         else
-            data = "#{indent this}</#{@name}>"
-        @emit 'end', data
+            @closed = yes
         this
 
-    toString: =>
+    toString: () =>
         "<#{@name}#{new_attrs @attrs}" +
             if @closed is 'self'
                 "/>"
             else if @closed
                 ">#{@content}</#{@name}>" # FIXME children ?
+
+    remove: () =>
+        @closed = 'removed' unless @closed
+        @emit 'remove', this
+        this
 
 
 class Builder extends EventEmitter
