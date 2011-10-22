@@ -82,6 +82,7 @@ class Tag extends EventEmitter
         @buffer = [] # after this tag all children emitted data
         @pending = [] # no open child tag
         @closed = false
+        @writable = true
         @content = ""
         @headers = "<#{@name}#{new_attrs @attrs}"
         @children children
@@ -166,6 +167,7 @@ class Tag extends EventEmitter
             @emit 'end'
         else
             @closed = yes
+        @writable = false
         this
 
     toString: () =>

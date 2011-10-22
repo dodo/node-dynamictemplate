@@ -1,3 +1,5 @@
+path = require 'path'
+{ createReadStream } = require 'fs'
 { Tag, Builder } = require '../async-xml'
 
 
@@ -259,4 +261,17 @@ module.exports =
             grass.end()
         ),3
 
+    pipe: (æ) ->
+        xml = new Builder
+        xml.on 'end', æ.done
+        xml.on 'data', (tag) -> æ.equal results.shift(), tag
+        results = [
+            '<file>'
+            'hello world\n'
+            '</file>'
+        ]
 
+        file = xml.tag('file')
+        stream = createReadStream path.join(__dirname, "filename")
+        stream.pipe(file)
+        xml.end()
