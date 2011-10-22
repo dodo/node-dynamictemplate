@@ -13,6 +13,8 @@
     "install": "node-waf configure build",
     "update": "node-waf build"}
 , "dependencies": {
+    "browserify": "1.6.1",
+    "scopify": ">= 0.1.0",
     "uglify-js": ">= 1.0.7",
     "coffee-script": ">= 1.1.2"}
 , "devDependencies": {
