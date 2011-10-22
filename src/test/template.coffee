@@ -48,3 +48,51 @@ module.exports =
             '</body>'
             '</html>'
         ]
+
+    'layout': (æ) ->
+
+        layout = ({title}, callback) ->
+            new Template schema:'html5', ->
+                @$html ->
+                    @$head ->
+                        @$title title
+                    body = @body ->
+                        @div class:'body', ->
+                            { end } = this
+                            @end = ->
+                                body.end()
+                                end()
+                            callback?.call(this)
+
+        template = (data) ->
+            layout data, ->
+                end = @end
+                @p ->
+                    @write data.content
+                    @end()
+                    end()
+
+
+        xml = template data =
+            title:'test'
+            content:'..'
+
+        xml.on 'end', æ.done
+        xml.on 'data', (tag) -> æ.equal results.shift(), tag
+        results = [
+            '<!DOCTYPE html>'
+            '<html>'
+            '<head>'
+            '<title>'
+            data.title
+            '</title>'
+            '<body>'
+            '<div class="body">'
+            '<p>'
+            data.content
+            '</p>'
+            '</div>'
+            '</body>'
+            '</html>'
+        ]
+
