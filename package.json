@@ -1,12 +1,12 @@
-{ "name": "async-xml"
-, "description": "async xml builder and generator"
+{ "name": "dynamictemplate"
+, "description": "async & dynamic templating engine"
 , "version": "0.0.0"
-, "homepage": "https://github.com/dodo/node-async-xml"
+, "homepage": "https://github.com/dodo/node-dynamictemplate"
 , "author": "dodo (https://github.com/dodo)"
-, "repository": {"type": "git", "url": "git://github.com/dodo/node-async-xml.git"}
-, "main": "async-xml.js"
+, "repository": {"type": "git", "url": "git://github.com/dodo/node-dynamictemplate.git"}
+, "main": "dynamictemplate.js"
 , "engines": {"node": "0.4.x"}
-, "keywords": ["async", "xml", "generation", "stream"]
+, "keywords": ["async", "dynamic", "event", "template", "generation", "stream", "browser"]
 , "scripts": {
     "test": "node-waf build && nodeunit test",
     "preinstall": "#preinstall DO NOTHING",

@@ -30,7 +30,7 @@ def build(ctx):
             source = file.srcpath()[3:],
             target = tgtpath)
 
-    file = ctx.path.find_dir("src").ant_glob("**/async-xml.coffee", flat=False)[0]
+    file = ctx.path.find_dir("src").ant_glob("**/dynamictemplate.coffee", flat=False)[0]
     tgtpath = file.change_ext(".browser.js").bldpath(env)[5:]
     ctx.path.exclusive_build_node(tgtpath)
     ctx(name   = "browserify",

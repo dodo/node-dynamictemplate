@@ -1,5 +1,5 @@
 { EventEmitter } = require 'events'
-{ Builder } = require './xml'
+{ Builder } = require 'asyncxml'
 
 
 schema =

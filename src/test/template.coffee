@@ -1,6 +1,6 @@
 path = require 'path'
 { readFile } = require 'fs'
-{ Template } = require '../async-xml'
+{ Template } = require '../dynamictemplate'
 
 module.exports =
 
