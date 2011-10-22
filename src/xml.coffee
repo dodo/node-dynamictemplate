@@ -47,22 +47,14 @@ new_tag = (name, attrs, children, opts) ->
                     @pending = @pending.slice(0,i).concat @pending.slice i+1
                     before = @pending[i-1]
                     before.buffer = before.buffer.concat buffer
-                    tag.removeListener 'data', pipe
+                    tag.removeListener 'data', pipe.data
                     tag.removeListener 'end', on_end
+                    for event in EVENTS
+                        tag.removeListener event, pipe[event]
                     return
             throw new Error("this shouldn't happen D:")
+    @emit 'add', tag
     return tag
-
-
-execute_children_scope = (children, {direct} = {}) ->
-        if typeof children is 'function'
-            if direct
-                children.call this
-            else
-                process.nextTick =>
-                    children.call this
-        else if children isnt undefined
-            @text children
 
 
 sync_tag = (name, attrs, children, opts) ->
@@ -72,7 +64,7 @@ sync_tag = (name, attrs, children, opts) ->
         attrs ?= {}
     opts ?= {}
     self_ending_children_scope = ->
-        execute_children_scope.call this, children, direct:yes
+        @children children, direct:yes
         @end()
     @tag.call this, name, attrs, self_ending_children_scope, opts
 
@@ -92,7 +84,7 @@ class Tag extends EventEmitter
         @closed = false
         @content = ""
         @headers = "<#{@name}#{new_attrs @attrs}"
-        execute_children_scope.call this, children
+        @children children
 
     $tag: =>
         # sync tag, - same as normal tag, but closes it automaticly
@@ -125,6 +117,17 @@ class Tag extends EventEmitter
                 delete @attr[key]
                 @emit 'attr:remove', this, key
         @headers = "<#{@name}#{new_attrs @attrs}" if @headers
+        this
+
+    children: (children, {direct} = {}) ->
+        if typeof children is 'function'
+            if direct
+                children.call this
+            else
+                process.nextTick =>
+                    children.call this
+        else if children isnt undefined
+            @text children
         this
 
     text: (content, opts = {}) =>

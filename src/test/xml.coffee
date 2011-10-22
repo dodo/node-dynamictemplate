@@ -149,8 +149,10 @@ module.exports =
             '</apple>'
         ]
         apple = xml.tag 'apple', ->
-            @$tag 'wurm', color:'red', ->
+            wurm = @tag 'wurm', color:'red'
+            wurm.children ->
                 @tag('seed').end()
+                @end()
             apple.end()
         xml.end()
 
