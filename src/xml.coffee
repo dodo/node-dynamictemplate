@@ -13,8 +13,10 @@ new_tag = (name, attrs, children, opts) ->
     opts.level = @level+1
     opts = deep_merge @opts, opts # possibility to overwrite existing opts, like pretty
     @pending.push tag = new @Tag name, attrs, children, opts
-    tag.up = => # set parent
-        tag.end.apply tag, arguments
+
+    tag.up = (opts = {}) => # set parent
+        opts.end ?= true
+        tag.end.apply tag, arguments if opts.end
         this
 
     tag.on 'data', pipe = (data) =>
