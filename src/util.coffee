@@ -32,5 +32,12 @@ new_attrs = (attrs = {}) ->
     strattrs.join ' '
 
 
+safe = (text) ->
+    String(text)
+        .replace(/&(?!\w+;)/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
 
-module.exports = { deep_merge, indent, new_attrs }
+
+module.exports = { deep_merge, indent, new_attrs, safe }

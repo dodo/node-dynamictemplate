@@ -1,5 +1,5 @@
 { EventEmitter } = require 'events'
-{ deep_merge, indent, new_attrs } = require './util'
+{ deep_merge, indent, new_attrs, safe } = require './util'
 EVENTS = ['add', 'attr', 'attr:remove', 'text', 'remove']
 
 new_tag = (name, attrs, children, opts) ->
@@ -146,12 +146,7 @@ class Tag extends EventEmitter
         this
 
     write: (content, {escape} = {}) =>
-        if escape
-            content = String(content)
-                .replace(/&(?!\w+;)/g, '&amp;')
-                .replace(/</g, '&lt;')
-                .replace(/>/g, '&gt;')
-                .replace(/"/g, '&quot;')
+        content = safe(content) if escape
         if @headers
             @emit 'data', "#{indent this}#{@headers}>"
             delete @headers
