@@ -148,7 +148,7 @@ class Tag extends EventEmitter
     write: (content, {escape} = {}) =>
         if escape
             content = String(content)
-                .replace(/&/g, '&amp;')
+                .replace(/&(?!\w+;)/g, '&amp;')
                 .replace(/</g, '&lt;')
                 .replace(/>/g, '&gt;')
                 .replace(/"/g, '&quot;')
