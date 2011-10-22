@@ -16,8 +16,9 @@ module.exports =
         xml = new Template schema:'html5', ->
             @$html ->
                 @body ->
-                    readFile path.join(__dirname,"filename"), (err, filedata) =>
-                        @$div class:'test', filedata
+                    file = path.join(__dirname,"..","..","..","filename")
+                    readFile file, (err, filedata) =>
+                        @$div class:'test', (filedata or err)
                         @$ul ->
                             content.forEach (data) =>
                                 li = @$li({'data-content':data}, data)
