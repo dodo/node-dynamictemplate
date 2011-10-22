@@ -16,18 +16,55 @@ schema =
         "audio abbr address aside bdi bdo blockquote canvas caption cite code "+
         "datalist details fieldset figcaption figure footer header kbd output "+
         "progress rp rt ruby samp summary time"
+    'strict': -> # xhtml1
+        "#{do schema.html}" # FIXME
+    'xhtml1.1': ->
+        "#{do schema.xhtml}" # FIXME
+    'xhtml': ->
+        "#{do schema.xhtml}" # FIXME
+    'frameset': ->
+        "#{do schema.xhtml}" # FIXME
+    'transitional': ->
+        "#{do schema.xhtml}" # FIXME
+    'mobile': ->
+        "#{do schema.xhtml}" # FIXME
+    'html-ce': ->
+        "#{do schema.xhtml}" # FIXME
     'html-obsolete': ->
         "applet acronym bgsound dir frameset noframes isindex listing nextid " +
         "noembed plaintext rb strike xmp big blink center font marquee nobr "  +
         "multicol spacer tt"
 
-
 # Valid self-closing HTML 5 elements.
 # set true when all tags are self closing
 self_closing =
     'xml'  : -> on
-    'html5': -> "#{do self_closing.html} base command keygen source track wbr"
     'html' : -> "area br col embed hr img input link meta param"
+    'html5': -> "#{do self_closing.html} base command keygen source track wbr"
+    'mobile' : ->  "#{do self_closing.xhtml}"
+    'html-ce': ->  "#{do self_closing.xhtml}"
+    'strict'  : -> "#{do self_closing.xhtml}"
+    'xhtml1.1': -> "#{do self_closing.xhtml}"
+    'xhtml'   : -> "#{do self_closing.xhtml}"
+    'frameset': -> "#{do self_closing.xhtml}"
+    'transitional': -> "#{do self_closing.xhtml}"
+
+# schema aliases
+aliases =
+    'default':'xml'
+    '5':'html5'
+    5:'html5'
+    'ce':'html-ce'
+    '1.1':'xhtml1.1'
+    'html11':'xhtml1.1'
+    'basic':'xhtml'
+    'xhtml1':'xhtml'
+    'xhtml-basic':'xhtml'
+    'xhtml-strict':'strict'
+    'xhtml-mobile':'mobile'
+    'xhtml-frameset':'frameset'
+    'xhtml-trasitional':'transitional'
+
 
 
 fill_with_tags = (tag, tags) ->
@@ -41,8 +78,9 @@ fill_with_tags = (tag, tags) ->
 class Template extends EventEmitter
     constructor: (opts = {}, template) ->
         [template, opts] = [opts, {}] if typeof opts is 'function'
-        opts.self_closing = self_closing[opts.schema ? 'xml']?()
-        opts.schema = schema[opts.schema ? 'xml']?()
+        s = aliases[opts.schema] or opts.schema or 'xml'
+        opts.self_closing = self_closing[s]?(opts)
+        opts.schema = schema[s]?(opts)
         opts.end ?= on
 
         class ExtendedBuilder
