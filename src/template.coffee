@@ -1,6 +1,6 @@
 { EventEmitter } = require 'events'
 { Builder } = require 'asyncxml'
-
+EVENTS = ['add', 'attr', 'attr:remove', 'text', 'remove', 'data', 'end']
 
 schema =
     'xml'  : -> "" # allready includes tag
@@ -143,10 +143,9 @@ class Template extends EventEmitter
                 @text "", force:yes if @headers
                 end_tag.call this, args...
 
-        @xml.on 'data', (args...) =>
-            @emit 'data', args...
-        @xml.on 'end', (args...) =>
-            @emit 'end', args...
+        EVENTS.forEach (event) =>
+            @xml.on event, (args...) =>
+                @emit event, args...
 
         process.nextTick =>
             if schema_input? and (dt = doctype[s]?(opts))
