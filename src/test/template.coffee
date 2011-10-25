@@ -56,21 +56,14 @@ module.exports =
                 @$html ->
                     @$head ->
                         @$title title
-                    body = @body ->
+                    @$body ->
                         @div class:'body', ->
-                            { end } = this
-                            @end = ->
-                                body.end()
-                                end()
                             callback?.call(this)
 
         template = (data) ->
             layout data, ->
-                end = @end
-                @p ->
-                    @write data.content
-                    @end()
-                    end()
+                @$p data.content
+                @end()
 
 
         xml = template data =
@@ -86,6 +79,7 @@ module.exports =
             '<title>'
             data.title
             '</title>'
+            '</head>'
             '<body>'
             '<div class="body">'
             '<p>'
