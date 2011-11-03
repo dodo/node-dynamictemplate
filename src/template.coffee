@@ -98,13 +98,17 @@ aliases =
     'xhtml-frameset':'frameset'
     'xhtml-trasitional':'transitional'
 
+##
+# i made these function name short ,
+# because its a little bit faster than with long names
 
+pp = (tag, name) -> # populate tag with specific child tag genertor
+    tag[    name] = -> tag.tag.apply  this, [name].concat arguments
+    tag["$"+name] = -> tag.$tag.apply this, [name].concat arguments
 
-fill_with_tags = (tag, tags) ->
-    tags.split(' ').forEach (name) ->
-        return unless name
-        tag[    name] = (args...) -> tag.tag( name, args...)
-        tag["$"+name] = (args...) -> tag.$tag(name, args...)
+ff = (tag, tags) -> # fill with tags
+    for tagname in tags
+        pp tag, tagname if tagname
     return tag
 
 
@@ -115,12 +119,12 @@ class Template extends EventEmitter
         schema_input = opts.schema
         s = aliases[schema_input] or schema_input or 'xml'
         opts.self_closing = self_closing[s]?(opts)
-        opts.schema = schema[s]?(opts)
+        opts.schema = schema[s]?(opts).split(' ')
         opts.end ?= on
 
         class ExtendedBuilder
             constructor: ->
-                fill_with_tags this, opts.schema
+                ff this, opts.schema
                 Builder.apply this, arguments
         for name, method of Builder::
             ExtendedBuilder::[name] = method
@@ -130,7 +134,7 @@ class Template extends EventEmitter
         Tag = @xml.Tag
         class ExtendedTag
             constructor: ->
-                fill_with_tags this, opts.schema
+                ff this, opts.schema
                 Tag.apply this, arguments
         @xml.Tag = @xml.opts.Tag = ExtendedTag
         for name, method of Tag::
