@@ -103,8 +103,8 @@ aliases =
 # because its a little bit faster than with long names
 
 pp = (tag, name) -> # populate tag with specific child tag genertor
-    tag[    name] = -> tag.tag.apply  this, [name].concat arguments
-    tag["$"+name] = -> tag.$tag.apply this, [name].concat arguments
+    tag[    name] = -> tag.tag.apply  this, [name].concat arguments...
+    tag["$"+name] = -> tag.$tag.apply this, [name].concat arguments...
 
 ff = (tag, tags) -> # fill with tags
     for tagname in tags
@@ -144,7 +144,7 @@ class Template extends EventEmitter
             if opts.self_closing is on or opts.self_closing.match @name
                 end_tag.call this, args...
             else
-                @text "", force:yes if @headers
+                @text "", force:yes if @isempty
                 end_tag.call this, args...
 
         EVENTS.forEach (event) =>
