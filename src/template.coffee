@@ -129,7 +129,7 @@ class Template extends EventEmitter
         for name, method of Builder::
             ExtendedBuilder::[name] = method
 
-        @xml = new ExtendedBuilder
+        @xml = new ExtendedBuilder opts
         @end = @xml.end
         Tag = @xml.Tag
         class ExtendedTag

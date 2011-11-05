@@ -49,7 +49,32 @@ module.exports =
             '</html>'
         ]
 
-    'layout': (æ) ->
+    pretty: (æ) ->
+        xml = new Template schema:5, pretty:" ", ->
+            @$html ->
+                @$head ->
+                    @$title "holla"
+                @$body ->
+                    @$p "hello world"
+        xml.on 'end', æ.done
+        xml.on 'data', (tag) -> æ.equal results.shift(), tag
+        results = [
+            '<!DOCTYPE html>'
+            '<html>'
+            ' <head>'
+            '  <title>'
+            '  holla'
+            '  </title>'
+            ' </head>'
+            ' <body>'
+            '  <p>'
+            '  hello world'
+            '  </p>'
+            ' </body>'
+            '</html>'
+        ]
+
+    layout: (æ) ->
 
         layout = ({title}, callback) ->
             new Template schema:'html5', ->
