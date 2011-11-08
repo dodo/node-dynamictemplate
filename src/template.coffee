@@ -102,14 +102,14 @@ aliases =
 # i made these function name short ,
 # because its a little bit faster than with long names
 
-pp = (tag, name) -> # populate tag with specific child tag genertor
-    tag[    name] = -> tag.tag.apply  this, [name].concat arguments...
-    tag["$"+name] = -> tag.$tag.apply this, [name].concat arguments...
+pp = (proto, name) -> # populate tag with specific child tag genertor
+    proto[    name] = -> @tag.apply  this, [name].concat arguments...
+    proto["$"+name] = -> @$tag.apply this, [name].concat arguments...
 
-ff = (tag, tags) -> # fill with tags
+ff = (proto, tags) -> # fill with tags
     for tagname in tags
-        pp tag, tagname if tagname
-    return tag
+        pp proto, tagname if tagname
+    return
 
 
 class Template extends EventEmitter
@@ -122,23 +122,16 @@ class Template extends EventEmitter
         opts.schema = schema[s]?(opts).split(' ')
         opts.end ?= on
 
-        class ExtendedBuilder
-            constructor: ->
-                ff this, opts.schema
-                Builder.apply this, arguments
-        for name, method of Builder::
-            ExtendedBuilder::[name] = method
+        class ExtendedBuilder extends Builder
+        ff ExtendedBuilder::, opts.schema
 
         @xml = new ExtendedBuilder opts
         @end = @xml.end
         Tag = @xml.Tag
-        class ExtendedTag
-            constructor: ->
-                ff this, opts.schema
-                Tag.apply this, arguments
+        class ExtendedTag extends Tag
+        ff ExtendedTag::, opts.schema
         @xml.Tag = @xml.opts.Tag = ExtendedTag
-        for name, method of Tag::
-            ExtendedTag::[name] = method
+
         end_tag = Tag::end
         @xml.Tag::end = (args...) ->
             if opts.self_closing is on or opts.self_closing.match @name
