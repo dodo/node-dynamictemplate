@@ -59,19 +59,19 @@ module.exports =
         xml.on 'end', æ.done
         xml.on 'data', (tag) -> æ.equal results.shift(), tag
         results = [
-            '<!DOCTYPE html>'
-            '<html>'
-            ' <head>'
-            '  <title>'
-            '  holla'
-            '  </title>'
-            ' </head>'
-            ' <body>'
-            '  <p>'
-            '  hello world'
-            '  </p>'
-            ' </body>'
-            '</html>'
+            '<!DOCTYPE html>\n'
+            '<html>\n'
+            ' <head>\n'
+            '  <title>\n'
+            '  holla\n'
+            '  </title>\n'
+            ' </head>\n'
+            ' <body>\n'
+            '  <p>\n'
+            '  hello world\n'
+            '  </p>\n'
+            ' </body>\n'
+            '</html>\n'
         ]
 
     layout: (æ) ->

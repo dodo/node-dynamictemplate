@@ -146,6 +146,7 @@ class Template extends EventEmitter
 
         process.nextTick =>
             if schema_input? and (dt = doctype[s]?(opts))
+                dt += "\n" if opts.pretty
                 @xml.emit 'data', dt
             if typeof template is 'function'
                 template.call @xml
