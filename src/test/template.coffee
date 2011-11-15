@@ -13,7 +13,7 @@ module.exports =
 
     html5: (æ) ->
         content = ["a", "b", "c"]
-        xml = new Template schema:5, ->
+        xml = new Template schema:5, doctype:on, ->
             @$html ->
                 @body ->
                     file = path.join(__dirname,"..","..","..","filename")
@@ -50,7 +50,7 @@ module.exports =
         ]
 
     pretty: (æ) ->
-        xml = new Template schema:5, pretty:" ", ->
+        xml = new Template schema:5, pretty:" ", doctype:on, ->
             @$html ->
                 @$head ->
                     @$title "holla"
@@ -98,7 +98,6 @@ module.exports =
         xml.on 'end', æ.done
         xml.on 'data', (tag) -> æ.equal results.shift(), tag
         results = [
-            '<!DOCTYPE html>'
             '<html>'
             '<head>'
             '<title>'

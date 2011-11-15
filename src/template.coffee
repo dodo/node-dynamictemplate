@@ -116,6 +116,7 @@ class Template extends EventEmitter
     constructor: (opts = {}, template) ->
         [template, opts] = [opts, {}] if typeof opts is 'function'
         opts.encoding ?= 'utf-8'
+        opts.doctype ?= off
         schema_input = opts.schema
         s = aliases[schema_input] or schema_input or 'xml'
         opts.self_closing = self_closing[s]?(opts)
@@ -145,7 +146,10 @@ class Template extends EventEmitter
                 @emit event, args...
 
         process.nextTick =>
-            if schema_input? and (dt = doctype[s]?(opts))
+            if opts.doctype is on
+                opts.doctype = 'html'
+            d = aliases[opts.doctype] or opts.doctype
+            if opts.doctype and (dt = doctype[d]?(opts))
                 dt += "\n" if opts.pretty
                 @xml.emit 'data', dt
             if typeof template is 'function'
