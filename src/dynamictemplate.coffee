@@ -2,4 +2,14 @@
 { Tag, Builder } = require 'asyncxml'
 Template = require './template'
 
-@dynamictemplate = module.exports = { Tag, Builder, Template }
+module.exports = { Tag, Builder, Template }
+
+# browser support
+
+if @dynamictemplate?
+    @dynamictemplate.Template = Template
+    @dynamictemplate.Builder  = Builder
+    @dynamictemplate.Tag      = Tag
+else
+    @dynamictemplate = module.exports
+
