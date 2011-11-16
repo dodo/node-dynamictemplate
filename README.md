@@ -1,21 +1,22 @@
 # [dynamictemplate](http://dodo.github.com/node-dynamictemplate/)
 
-Yet another template engine, but this time loaded with full async support and
-capable of being changed even after the template was rendered.
+[dynamictemplate](http://dodo.github.com/node-dynamictemplate/) is yet
+another template engine, but this time loaded with full async support
+and capable of being changed even after the template was rendered.
 
-workz in browser too (but requires jquery).
+It works in browsers too (requires JQuery).
 
-→ [check out the demo](http://dodo.github.com/node-dynamictemplate/example/list.html)
+→ [Check out the demo!](http://dodo.github.com/node-dynamictemplate/example/list.html)
 
-## installation
+## Installation
 
 ```bash
 $ npm install dynamictemplate
 ```
 
-## documentation
+## Documentation
 
-### Template
+### Writing templates
 
 ```coffeescript
 tpl = new Template schema:'xml', doctype:off, pretty:off, encoding:'utf-8', end:on, -> # default settings
@@ -23,33 +24,33 @@ tpl = new Template schema:'xml', doctype:off, pretty:off, encoding:'utf-8', end:
         @$tag 'child', "content"
 ```
 
-this actually allows you to write real template with [asyncxml](https://github.com/dodo/node-asyncxml).
-normally asyncxml just gives you the ability to write asyncronious xml generation.
+This actually allows you to write real templates with [asyncxml](https://github.com/dodo/node-asyncxml).
+Normally, asyncxml just gives you the ability to write asynchronous XML-generating code.
 
-### how to write tags
+### How to write tags
 
-maybe the main difference to some other template engines is that all the tags are asyncronious.
-this has the side effect that every tag has to be closed manually. this can get a little bit anoying when you write very large templates. that's  why i added a little shortcut which ivokes the end for you at the and of the children scope:
+Maybe the main difference to some other template engines is that all the tags are asynchronous.
+This has the side effect that every tag has to be closed manually. As this can get a little bit anoying when you write very large templates, I added a little shortcut which invokes the end for you at the and of the child scope:
 
 ```coffeescript
 @html ->
     @body("content").end()
     @end()
 
-# is the exact same
+# is the exactly same as
 
 @$html 'xml', ->
     @$body "content"
 ```
 
-just add a `$` infront of the tag method and it is a little bit more sync again.
+Just add a dollar sign (`$`) in front of the tag method and it acts a little bit more synchronous again.
 
-### adapters
+### Adapters
 
-dynamictemplate has a similar approach like [backbone.js](http://documentcloud.github.com/backbone/) where you can choose your own backend of your models, collections or in this case templates.
+dynamictemplate has a similar approach like [Backbone.js](http://documentcloud.github.com/backbone/) where you can choose your own backend of models, collections or, in this case, templates.
 
 
-currently only the [jquery adapter](https://github.com/dodo/node-dynamictemplate/blob/master/src/dynamictemplate-jquery.coffee) is available:
+Currently only the [JQuery adapter](https://github.com/dodo/node-dynamictemplate/blob/master/src/dynamictemplate-jquery.coffee) is available:
 
 ```html
 <script src="dynamictemplate-jquery.browser.js"></script>
@@ -58,7 +59,7 @@ currently only the [jquery adapter](https://github.com/dodo/node-dynamictemplate
 </script>
 ```
 
-just throw your template in it and add it to the DOM when it's ready:
+Just throw your template in and add it to the DOM when it's ready:
 
 ```javascript
 var tpl = jquerify(template(mydata));
@@ -67,20 +68,21 @@ tpl.on('end', function () {
 });
 ```
 
-### the dynamic part
+### The dynamic part
 
     TODO i couldnt find the time to build an example
     that's works best with dynamictemplate, so please stand by.
 
 
-#### just fyi
-this is not finished yet.
-but please, make yourself comfortable, take a cookie and **start contributing**!
+#### Just FYI
+
+This is not finished yet.
+But please, make yourself comfortable, take a cookie and **start contributing**!
 
 
-## example
+## Example
 
-if you are familiar with [coffeekup](http://coffeekup.org), you should recognize this:
+If you are familiar with [coffeekup](http://coffeekup.org), you should recognize this:
 
 ```coffeescript
 stringify = (func) -> func.toString()
