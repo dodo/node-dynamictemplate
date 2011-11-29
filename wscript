@@ -16,6 +16,7 @@ def configure(ctx):
     ctx.find_program("coffee", var="COFFEE", path_list=ctx.env.PATH)
     ctx.env.BROWSERIFY_ARGS = "-p scopify -o"
     ctx.env.COFFEE_ARGS = "-co"
+    ctx.env.set_variant("default")
 
 
 def build(ctx):
