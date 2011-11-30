@@ -38,6 +38,14 @@ jquerify = (tpl) ->
         tpl.jquery = tpl.xml._jquery = $(tpl.xml._children)
         delete tpl.xml._children
 
+    old_query = tpl.xml.query
+    tpl.xml.query = (type, tag, key) ->
+        return old_query.call(this, type, tag, key) unless tag._jquery?
+        if type is 'attr'
+            tag._jquery.attr(key)
+        else if type is 'text'
+            tag._jquery.text()
+
     return tpl
 
 # exports
