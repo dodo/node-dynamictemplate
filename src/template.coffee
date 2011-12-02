@@ -143,9 +143,17 @@ class Template extends EventEmitter
                 @text "", force:yes if @isempty
                 end_tag.call this, args...
 
+        ##
+        # pipe events through and add hooks to be able to alter event behavoir
+        # (eg injecting events before others)
+        # override method "on#{event}" to access the hook
         EVENTS.forEach (event) =>
-            @xml.on event, (args...) =>
+            # build hook
+            @["on#{event}"] = (args...) =>
                 @emit event, args...
+            # listen
+            @xml.on event, (args...) =>
+                @["on#{event}"](args...)
 
         process.nextTick =>
             if opts.doctype is on
