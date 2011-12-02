@@ -137,7 +137,6 @@ class Template extends EventEmitter
         ff ExtendedBuilder::, opts.schema
         # instantiate
         @xml = new ExtendedBuilder opts
-        @end = @xml.end
 
         # tag class is defined by builder
         Tag = @xml.Tag
@@ -189,6 +188,9 @@ class Template extends EventEmitter
                 @end() if opts.end
             else
                 @xml.end(template)
+
+    end: =>
+        @xml.end arguments...
 
 
 # exports
