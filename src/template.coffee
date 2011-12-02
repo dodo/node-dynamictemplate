@@ -152,12 +152,12 @@ class Template extends EventEmitter
         # add self closing tag behavior
         # some of the html tags dont need a closing tag
         end_tag = Tag::end
-        @xml.Tag::end = (args...) ->
+        @xml.Tag::end = ->
             if opts.self_closing is on or opts.self_closing.match @name
-                end_tag.call this, args...
+                end_tag.call this, arguments...
             else
                 @text "", force:yes if @isempty
-                end_tag.call this, args...
+                end_tag.call this, arguments...
 
         ##
         # pipe events through and add hooks to be able to alter event behavior
@@ -165,11 +165,11 @@ class Template extends EventEmitter
         # override method "on#{event}" to access the hook
         EVENTS.forEach (event) =>
             # build hook
-            @["on#{event}"] = (args...) =>
-                @emit event, args...
+            @["on#{event}"] = =>
+                @emit event, arguments...
             # listen
-            @xml.on event, (args...) =>
-                @["on#{event}"](args...)
+            @xml.on event, =>
+                @["on#{event}"](arguments...)
 
         ##
         # start the templating process after user listened for events
