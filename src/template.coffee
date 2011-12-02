@@ -1,5 +1,5 @@
 { EventEmitter } = require 'events'
-{ Builder } = require 'asyncxml'
+{ Builder:DefaultBuilder } = require 'asyncxml'
 EVENTS = ['new','add','attr','attr:remove','text','remove','data','close','end']
 
 schema =
@@ -122,6 +122,8 @@ class Template extends EventEmitter
         opts.self_closing = self_closing[s]?(opts)
         opts.schema = schema[s]?(opts).split(' ')
         opts.end ?= on
+        # get builder class from options
+        Builder = opts.Builder ? DefaultBuilder
 
         class ExtendedBuilder extends Builder
         ff ExtendedBuilder::, opts.schema
