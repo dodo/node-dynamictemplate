@@ -114,27 +114,43 @@ ff = (proto, tags) -> # fill with tags
 
 class Template extends EventEmitter
     constructor: (opts = {}, template) ->
+        # options
         [template, opts] = [opts, {}] if typeof opts is 'function'
+        # defaults
         opts.encoding ?= 'utf-8'
         opts.doctype ?= off
-        schema_input = opts.schema
-        s = aliases[schema_input] or schema_input or 'xml'
-        opts.self_closing = self_closing[s]?(opts)
-        opts.schema = schema[s]?(opts).split(' ')
         opts.end ?= on
+        # schema
+        schema_input = opts.schema
+        # resolve schema name input
+        s = aliases[schema_input] or schema_input or 'xml'
+        # load self closing schema
+        opts.self_closing = self_closing[s]?(opts)
+        # load tag list (xml schema)
+        opts.schema = schema[s]?(opts).split(' ')
+
         # get builder class from options
         Builder = opts.Builder ? DefaultBuilder
-
+        # create new builder class to extend it with a schema
         class ExtendedBuilder extends Builder
+        # create tag method shortcuts defined by schema
         ff ExtendedBuilder::, opts.schema
-
+        # instantiate
         @xml = new ExtendedBuilder opts
         @end = @xml.end
+
+        # tag class is defined by builder
         Tag = @xml.Tag
+        # create new tag class to extend it with a schema
         class ExtendedTag extends Tag
+        # create tag method shortcuts defined by schema
         ff ExtendedTag::, opts.schema
+        # write it back so builder can use it to instantiate a new tag
         @xml.Tag = @xml.opts.Tag = ExtendedTag
 
+        ##
+        # add self closing tag behavior
+        # some of the html tags dont need a closing tag
         end_tag = Tag::end
         @xml.Tag::end = (args...) ->
             if opts.self_closing is on or opts.self_closing.match @name
@@ -144,7 +160,7 @@ class Template extends EventEmitter
                 end_tag.call this, args...
 
         ##
-        # pipe events through and add hooks to be able to alter event behavoir
+        # pipe events through and add hooks to be able to alter event behavior
         # (eg injecting events before others)
         # override method "on#{event}" to access the hook
         EVENTS.forEach (event) =>
@@ -155,13 +171,19 @@ class Template extends EventEmitter
             @xml.on event, (args...) =>
                 @["on#{event}"](args...)
 
+        ##
+        # start the templating process after user listened for events
         process.nextTick =>
+            # load doctype if enabled
             if opts.doctype is on
                 opts.doctype = 'html'
+            # resolve doctype name input
             d = aliases[opts.doctype] or opts.doctype
+            # write doctype
             if opts.doctype and (dt = doctype[d]?(opts))
                 dt += "\n" if opts.pretty
                 @xml.emit 'data', dt
+            # templating process ...
             if typeof template is 'function'
                 template.call @xml
                 @end() if opts.end
