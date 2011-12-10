@@ -158,17 +158,10 @@ class Template extends EventEmitter
                 @text "", force:yes if @isempty
                 end_tag.call this, arguments...
 
-        ##
-        # pipe events through and add hooks to be able to alter event behavior
-        # (eg injecting events before others)
-        # override method "on#{event}" to access the hook
+        # pipe events through
         EVENTS.forEach (event) =>
-            # build hook
-            @["on#{event}"] = =>
-                @emit event, arguments...
-            # listen
-            @xml.on event, =>
-                @["on#{event}"](arguments...)
+            @xml.on event, (args...) =>
+                @emit event, args...
 
         ##
         # start the templating process after user listened for events
