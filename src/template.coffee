@@ -147,7 +147,7 @@ class Template extends EventEmitter
         # write it back so builder can use it to instantiate a new tag
         @xml.Tag = @xml.opts.Tag = ExtendedTag
 
-        ##
+        ## FIXME replace this with new checker middleware api when possible
         # add self closing tag behavior
         # some of the html tags dont need a closing tag
         end_tag = Tag::end
