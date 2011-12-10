@@ -180,7 +180,7 @@ class Template extends EventEmitter
                 template.call @xml
                 @end() if opts.end
             else
-                @xml.end(template)
+                @end(template)
 
     end: =>
         @xml.end arguments...
