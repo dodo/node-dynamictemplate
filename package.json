@@ -6,7 +6,7 @@
 , "repository": {"type": "git", "url": "git://github.com/dodo/node-dynamictemplate.git"}
 , "main": "dynamictemplate.js"
 , "engines": {"node": ">= 0.4.x"}
-, "keywords": ["async", "dynamic", "event", "template", "generation", "stream", "browser"]
+, "keywords": ["dt", "async", "dynamic", "event", "template", "generation", "stream", "browser"]
 , "scripts": {
     "test": "node-waf build && nodeunit test",
     "preinstall": "#preinstall DO NOTHING",

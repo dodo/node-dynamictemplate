@@ -54,7 +54,9 @@ module.exports = jquerify
 
 # browser support
 
-if @dynamictemplate?
-    @dynamictemplate.jquerify = jquerify
-else
-    @dynamictemplate = {jquerify}
+( ->
+    if @dynamictemplate?
+        @dynamictemplate.jquerify = jquerify
+    else
+        @dynamictemplate = {jquerify}
+).call window if process.title is 'browser'
