@@ -7,7 +7,6 @@
     var res = mod._cached ? mod._cached : mod();
     return res;
 }
-var __require = require;
 
 require.paths = [];
 require.modules = {};
@@ -136,14 +135,18 @@ require.define = function (filename, fn) {
         : require.modules.path().dirname(filename)
     ;
     
-    var require_ = function (file) { return require(file, dirname) };
+    var require_ = function (file) {
+        return require(file, dirname)
+    };
     require_.resolve = function (name) {
-      return require.resolve(name, dirname);
+        return require.resolve(name, dirname);
     };
     require_.modules = require.modules;
+    require_.define = require.define;
     var module_ = { exports : {} };
     
     require.modules[filename] = function () {
+        require.modules[filename]._cached = module_.exports;
         fn.call(
             module_.exports,
             require_,
@@ -316,26 +319,16 @@ exports.extname = function(path) {
 
 });
 
-(function () {
-    var module = { exports : {} };
-    var exports = module.exports;
-    var __dirname = "/";
-    var __filename = "//home/dodo/code/javascript/node-dynamictemplate/src";
-    
-    var require = function (file) {
-        return __require(file, "/");
-    };
-    require.modules = __require.modules;
-    
+require.define("/dynamictemplate-jquery.coffee", function (require, module, exports, __dirname, __filename) {
     (function() {
   var jquerify;
   var __slice = Array.prototype.slice;
+
   jquerify = function(tpl) {
+    var old_query;
     tpl.xml._children = [];
     tpl.on('add', function(el) {
-      if (el._jquery == null) {
-        return el._children = [];
-      }
+      if (el._jquery == null) return el._children = [];
     });
     tpl.on('close', function(el) {
       var child, _i, _len, _ref;
@@ -379,9 +372,20 @@ exports.extname = function(path) {
       tpl.jquery = tpl.xml._jquery = $(tpl.xml._children);
       return delete tpl.xml._children;
     });
+    old_query = tpl.xml.query;
+    tpl.xml.query = function(type, tag, key) {
+      if (tag._jquery == null) return old_query.call(this, type, tag, key);
+      if (type === 'attr') {
+        return tag._jquery.attr(key);
+      } else if (type === 'text') {
+        return tag._jquery.text();
+      }
+    };
     return tpl;
   };
+
   module.exports = jquerify;
+
   if (this.dynamictemplate != null) {
     this.dynamictemplate.jquerify = jquerify;
   } else {
@@ -389,7 +393,9 @@ exports.extname = function(path) {
       jquerify: jquerify
     };
   }
+
 }).call(this);
-;
-})();
+
+});
+require("/dynamictemplate-jquery.coffee");
 }).call(this);
