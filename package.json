@@ -1,5 +1,5 @@
 { "name": "dynamictemplate"
-, "description": "async & dynamic templating engine"
+, "description": "Δt - async & dynamic templating engine"
 , "version": "0.2.1"
 , "homepage": "https://github.com/dodo/node-dynamictemplate"
 , "author": "dodo (https://github.com/dodo)"
