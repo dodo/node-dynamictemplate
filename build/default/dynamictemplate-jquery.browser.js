@@ -386,12 +386,16 @@ require.define("/dynamictemplate-jquery.coffee", function (require, module, expo
 
   module.exports = jquerify;
 
-  if (this.dynamictemplate != null) {
-    this.dynamictemplate.jquerify = jquerify;
-  } else {
-    this.dynamictemplate = {
-      jquerify: jquerify
-    };
+  if (process.title === 'browser') {
+    (function() {
+      if (this.dynamictemplate != null) {
+        return this.dynamictemplate.jquerify = jquerify;
+      } else {
+        return this.dynamictemplate = {
+          jquerify: jquerify
+        };
+      }
+    }).call(window);
   }
 
 }).call(this);

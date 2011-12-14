@@ -1234,12 +1234,16 @@ require.define("/dynamictemplate.coffee", function (require, module, exports, __
     Template: Template
   };
 
-  if (this.dynamictemplate != null) {
-    this.dynamictemplate.Template = Template;
-    this.dynamictemplate.Builder = Builder;
-    this.dynamictemplate.Tag = Tag;
-  } else {
-    this.dynamictemplate = module.exports;
+  if (process.title === 'browser') {
+    (function() {
+      if (this.dynamictemplate != null) {
+        this.dynamictemplate.Template = Template;
+        this.dynamictemplate.Builder = Builder;
+        return this.dynamictemplate.Tag = Tag;
+      } else {
+        return this.dynamictemplate = module.exports;
+      }
+    }).call(window);
   }
 
 }).call(this);
