@@ -38,11 +38,3 @@ def build(ctx):
         rule   = "${BROWSERIFY} ${SRC} ${BROWSERIFY_ARGS} ${TGT}",
         source = file.srcpath()[3:],
         target = tgtpath)
-
-    file = ctx.path.find_dir("src").ant_glob("**/dynamictemplate-jquery.coffee", flat=False)[0]
-    tgtpath = file.change_ext(".browser.js").bldpath(env)[5:]
-    ctx.path.exclusive_build_node(tgtpath)
-    ctx(name   = "browserify",
-        rule   = "${BROWSERIFY} ${SRC} ${BROWSERIFY_ARGS} ${TGT}",
-        source = file.srcpath()[3:],
-        target = tgtpath)
