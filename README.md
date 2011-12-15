@@ -45,28 +45,10 @@ This has the side effect that every tag has to be closed manually. As this can g
 
 Just add a dollar sign (`$`) in front of the tag method and it acts a little bit more synchronous again.
 
-### Adapters
+### Plugins
 
-dynamictemplate has a similar approach like [Backbone.js](http://documentcloud.github.com/backbone/) where you can choose your own backend of models, collections or, in this case, templates.
-
-
-Currently only the [JQuery adapter](https://github.com/dodo/node-dynamictemplate/blob/master/src/dynamictemplate-jquery.coffee) is available:
-
-```html
-<script src="dynamictemplate-jquery.browser.js"></script>
-<scipt>
-    var jquerify = window.dynamictemplate.jquerify; // get the jquery adapter
-</script>
-```
-
-Just throw your template in and add it to the DOM when it's ready:
-
-```javascript
-var tpl = jquerify(template(mydata));
-tpl.on('end', function () {
-    $('.container').append(tpl.jquery);
-});
-```
+ * [Δt compiler](https://github.com/dodo/node-dt-compiler) - this compiles static HTML to template masks.
+ * [Δt jquery adapter](https://github.com/dodo/node-dt-jquery) - this lets you insert the template into dom with the help of [jQuery](http://jquery.com/).
 
 ### The dynamic part
 
