@@ -155,7 +155,7 @@ class Template extends EventEmitter
             if opts.self_closing is on or opts.self_closing.match @name
                 end_tag.call this, arguments...
             else
-                @text "", force:yes if @isempty
+                @text("", force:yes) if @isempty
                 end_tag.call this, arguments...
 
         # pipe events through
