@@ -189,5 +189,6 @@ class Template extends EventEmitter
 # exports
 
 Template.schema = schema
+Template.doctype = doctype
 module.exports = Template
 Template.self_closing = self_closing
