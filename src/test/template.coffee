@@ -25,7 +25,7 @@ module.exports =
                         @end()
 
 
-        xml.on 'end', æ.done
+        xml.ready æ.done
         xml.on 'data', (tag) -> æ.equal results.shift(), tag
         results = [
             '<!DOCTYPE html>'
@@ -56,7 +56,7 @@ module.exports =
                     @$title "holla"
                 @$body ->
                     @$p "hello world"
-        xml.on 'end', æ.done
+        xml.ready æ.done
         xml.on 'data', (tag) -> æ.equal results.shift(), tag
         results = [
             '<!DOCTYPE html>\n'
@@ -95,7 +95,7 @@ module.exports =
             title:'test'
             content:'..'
 
-        xml.on 'end', æ.done
+        xml.ready æ.done
         xml.on 'data', (tag) -> æ.equal results.shift(), tag
         results = [
             '<html>'
