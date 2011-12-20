@@ -182,6 +182,9 @@ class Template extends EventEmitter
             else
                 @end(template)
 
+    register: =>
+        @xml.register arguments...
+
     end: =>
         @xml.end arguments...
 
