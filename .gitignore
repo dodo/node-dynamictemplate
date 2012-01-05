@@ -4,5 +4,6 @@ lib/*
 test/*
 example/*
 filename
+*.browser.*
 .lock-wscript
 node_modules/
