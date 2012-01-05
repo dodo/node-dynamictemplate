@@ -8,17 +8,16 @@
 , "engines": {"node": ">= 0.4.x"}
 , "keywords": ["dt", "async", "dynamic", "event", "template", "generation", "stream", "browser"]
 , "scripts": {
-    "test": "node-waf build && nodeunit test",
-    "preinstall": "#preinstall DO NOTHING",
-    "install": "node-waf configure build",
-    "update": "node-waf build"}
+    "test": "cake build && nodeunit test",
+    "pre-publish": "cake build"}
 , "dependencies": {
     "bufferstream": ">= 0.4.10",
-    "asyncxml": ">= 0.1.4",
+    "asyncxml": ">= 0.1.4"}
+, "devDependencies": {
     "browserify": "1.6.1",
     "scopify": ">= 0.1.1",
-    "coffee-script": ">= 1.1.3"}
-, "devDependencies": {
+    "coffee-script": ">= 1.1.3",
+    "muffin": ">= 0.2.6",
     "nodeunit": ">= 0.5.4"}
 , "licenses" : [
     { "type": "MIT" ,
