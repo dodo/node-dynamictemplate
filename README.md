@@ -39,7 +39,7 @@ This has the side effect that every tag has to be closed manually. As this can g
 
 # is the exactly same as
 
-@$html 'xml', ->
+@$html ->
     @$body "content"
 ```
 
