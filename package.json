@@ -9,7 +9,7 @@
 , "keywords": ["dt", "async", "dynamic", "event", "template", "generation", "stream", "browser"]
 , "scripts": {
     "test": "cake build && nodeunit test",
-    "pre-publish": "cake build"}
+    "prepublish": "cake build"}
 , "dependencies": {
     "bufferstream": ">= 0.4.10",
     "asyncxml": ">= 0.1.4"}
