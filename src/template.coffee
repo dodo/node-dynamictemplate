@@ -1,6 +1,10 @@
 { EventEmitter } = require 'events'
 { Builder:DefaultBuilder } = require 'asyncxml'
-EVENTS = ['new','add','attr','attr:remove','text','remove','data','close','end']
+EVENTS = [
+    'new','add'
+    'attr','attr:remove','text', 'raw'
+    'remove','data','close','end'
+]
 
 schema =
     'xml'  : -> "" # allready includes tag
