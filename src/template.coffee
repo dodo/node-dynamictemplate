@@ -2,8 +2,10 @@
 { Builder:DefaultBuilder } = require 'asyncxml'
 EVENTS = [
     'new','add'
+    'show', 'hide'
     'attr','attr:remove','text', 'raw'
-    'remove','data','close','end'
+    'remove', 'replace'
+    'data','close','end'
 ]
 
 schema =
