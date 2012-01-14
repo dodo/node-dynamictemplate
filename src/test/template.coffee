@@ -16,7 +16,7 @@ module.exports =
         xml = new Template schema:5, doctype:on, ->
             @$html ->
                 @body ->
-                    file = path.join(__dirname,"..","..","..","filename")
+                    file = path.join(__dirname,"..","filename")
                     readFile file, (err, filedata) =>
                         @$div class:'test', (filedata or err)
                         @$ul ->
