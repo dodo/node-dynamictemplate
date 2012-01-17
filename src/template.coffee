@@ -2,6 +2,7 @@
 { Builder:DefaultBuilder } = require 'asyncxml'
 { schema, self_closing } = require './schema'
 { doctype } = require './doctype'
+{ aliases } = require './alias'
 
 EVENTS = [
     'new','add'
@@ -11,22 +12,6 @@ EVENTS = [
     'data','close','end'
 ]
 
-
-# schema aliases
-aliases =
-    'default':'xml'
-    '5':'html5'
-    5:'html5'
-    'ce':'html-ce'
-    '1.1':'xhtml1.1'
-    'html11':'xhtml1.1'
-    'basic':'xhtml'
-    'xhtml1':'xhtml'
-    'xhtml-basic':'xhtml'
-    'xhtml-strict':'strict'
-    'xhtml-mobile':'mobile'
-    'xhtml-frameset':'frameset'
-    'xhtml-trasitional':'transitional'
 
 ##
 # i made these function name short ,
