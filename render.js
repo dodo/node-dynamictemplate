@@ -1,2 +1,2 @@
 
-module.exports = require('./build/default/render')
+module.exports = require('./lib/render')
