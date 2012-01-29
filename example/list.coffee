@@ -1,4 +1,4 @@
-{ Template, jquerify } = window.dynamictemplate
+{ Template, jqueryify } = window.dynamictemplate
 EventEmitter = Template.__super__.constructor # i prefer nodejs eventemitter
 
 # the templates
@@ -8,7 +8,7 @@ button = (tag, id, value) ->
 
 items = [] # all our list entries
 tplapi = new EventEmitter # every other event system should be suitable as well
-list = jquerify new Template schema:5, ->
+list = jqueryify new Template schema:5, ->
     @$div class:'controls', ->
         button this, "add",    "add random entry"
         button this, "remove", "remove random entry"
@@ -18,19 +18,17 @@ list = jquerify new Template schema:5, ->
             console.log "add entry"
             items.push @$li ->
                 @$p "#{Math.random()}"
-    @end()
 
 # initialize
 
-list.once 'end', ->
-    # and again :/
+list.ready ->
     for el in list.jquery
         $('body').append el
 
-    $('#add').on 'click', ->
+    $('#add').live 'click', ->
         tplapi.emit 'add' # tell the template to add a new entry
 
-    $('#remove').on 'click', ->
+    $('#remove').live 'click', ->
         items.shift()?.remove()
 
 
