@@ -16,6 +16,7 @@ task 'compile', 'compile coffeescript → javascript', (options) ->
 
 task 'bundle', 'build a browser bundle', (options) ->
     browserify = require 'browserify'
+    { createScope } = require 'scopify'
     run
         options:options
         files:[
@@ -26,7 +27,7 @@ task 'bundle', 'build a browser bundle', (options) ->
                 bundle = browserify({
                         require: path.join(__dirname, m[0])
                         cache: on
-                    }).use(require 'scopify').bundle()
+                    }).use(createScope require:'./'+m[1]).bundle()
                 notify m[0], "successful browserify!"
                 filename = "#{m[1]}.browser.js"
                 writeFile(filename, bundle, options).then ->
