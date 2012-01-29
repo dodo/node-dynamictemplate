@@ -520,4 +520,4 @@ require.define("/node_modules/request-animation-frame/lib/shim.js", function (re
   })();
 
 });
-}).call(this);
+;require('./dt-jquery');}).call(this);

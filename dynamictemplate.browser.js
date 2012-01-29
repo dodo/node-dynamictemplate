@@ -1232,9 +1232,11 @@ require.define("/template.js", function (require, module, exports, __dirname, __
 
   Template.doctype = doctype;
 
-  module.exports = Template;
-
   Template.self_closing = self_closing;
+
+  Template.aliases = aliases;
+
+  module.exports = Template;
 
   /*
   
@@ -1421,4 +1423,4 @@ require.define("/alias.js", function (require, module, exports, __dirname, __fil
 }).call(this);
 
 });
-}).call(this);
+;require('./dynamictemplate');}).call(this);
