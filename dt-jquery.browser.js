@@ -7,6 +7,7 @@
     var res = mod._cached ? mod._cached : mod();
     return res;
 }
+var __require = require;
 
 require.paths = [];
 require.modules = {};
@@ -135,18 +136,14 @@ require.define = function (filename, fn) {
         : require.modules.path().dirname(filename)
     ;
     
-    var require_ = function (file) {
-        return require(file, dirname)
-    };
+    var require_ = function (file) { return require(file, dirname) };
     require_.resolve = function (name) {
-        return require.resolve(name, dirname);
+      return require.resolve(name, dirname);
     };
     require_.modules = require.modules;
-    require_.define = require.define;
     var module_ = { exports : {} };
     
     require.modules[filename] = function () {
-        require.modules[filename]._cached = module_.exports;
         fn.call(
             module_.exports,
             require_,
@@ -319,33 +316,77 @@ exports.extname = function(path) {
 
 });
 
-require.define("/dynamictemplate-jquery.coffee", function (require, module, exports, __dirname, __filename) {
+require.define("/dt-jquery.js", function (require, module, exports, __dirname, __filename) {
     (function() {
-  var jquerify;
+  var delay, frame_queue, jqueryify, nextAnimationFrame, release, requestAnimationFrame, work_frame_queue;
   var __slice = Array.prototype.slice;
 
-  jquerify = function(tpl) {
+  requestAnimationFrame = require('request-animation-frame').requestAnimationFrame;
+
+  frame_queue = [];
+
+  nextAnimationFrame = function(cb) {
+    var next;
+    frame_queue.push(cb);
+    next = function() {
+      return requestAnimationFrame(function() {
+        work_frame_queue();
+        if (frame_queue.length) return next();
+      });
+    };
+    if (frame_queue.length === 1) return next();
+  };
+
+  work_frame_queue = function() {
+    var t1, t2, _base, _results;
+    t1 = t2 = new Date().getTime();
+    _results = [];
+    while (frame_queue.length && t2 - t1 < 5) {
+      if (typeof (_base = frame_queue.shift()) === "function") _base();
+      _results.push(t2 = new Date().getTime());
+    }
+    return _results;
+  };
+
+  delay = function(job) {
+    var _ref;
+    if (this._jquery != null) {
+      return job();
+    } else {
+      if ((_ref = this._jquery_delay) == null) this._jquery_delay = [];
+      return this._jquery_delay.push(job);
+    }
+  };
+
+  release = function() {
+    var job, _i, _len, _ref;
+    if (this._jquery_delay != null) {
+      _ref = this._jquery_delay;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        job = _ref[_i];
+        job();
+      }
+      return delete this._jquery_delay;
+    }
+  };
+
+  jqueryify = function(tpl) {
     var old_query;
-    tpl.xml._children = [];
-    tpl.on('add', function(el) {
-      if (el._jquery == null) return el._children = [];
+    tpl.on('add', function(parent, el) {
+      return delay.call(parent, function() {
+        if (parent === tpl.xml) {
+          return parent._jquery = parent._jquery.add(el._jquery);
+        } else {
+          return nextAnimationFrame(function() {
+            return parent._jquery.append(el._jquery);
+          });
+        }
+      });
     });
     tpl.on('close', function(el) {
-      var child, _i, _len, _ref;
-      el._jquery = $(el.toString());
-      if (el.parent._children != null) {
-        el.parent._children.push(el._jquery);
-      } else {
-        el.parent._jquery.append(el._jquery);
-      }
-      if (el._children) {
-        _ref = el._children;
-        for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-          child = _ref[_i];
-          el._jquery.append(child);
-        }
-        delete el._children;
-      }
+      var _ref;
+      if ((_ref = el._jquery) == null) el._jquery = $(el.toString());
+      release.call(el);
       return el.on('newListener', function(type) {
         var _ref2, _ref3;
         if ((_ref2 = el._events) != null ? (_ref3 = _ref2[type]) != null ? _ref3.length : void 0 : void 0) {
@@ -356,21 +397,58 @@ require.define("/dynamictemplate-jquery.coffee", function (require, module, expo
         });
       });
     });
+    tpl.on('text', function(el, text) {
+      return delay.call(el, function() {
+        return el._jquery.text(text);
+      });
+    });
+    tpl.on('raw', function(el, html) {
+      return delay.call(el, function() {
+        return nextAnimationFrame(function() {
+          return el._jquery.html(html);
+        });
+      });
+    });
+    tpl.on('show', function(el) {
+      return delay.call(el, function() {
+        return el._jquery.show();
+      });
+    });
+    tpl.on('hide', function(el) {
+      return delay.call(el, function() {
+        return el._jquery.hide();
+      });
+    });
     tpl.on('attr', function(el, key, value) {
-      var _ref;
-      return (_ref = el._jquery) != null ? _ref.attr(key, value) : void 0;
+      return delay.call(el, function() {
+        return el._jquery.attr(key, value);
+      });
     });
     tpl.on('attr:remove', function(el, key) {
-      var _ref;
-      return (_ref = el._jquery) != null ? _ref.removeAttr(key) : void 0;
+      return delay.call(el, function() {
+        return el._jquery.removeAttr(key);
+      });
+    });
+    tpl.on('replace', function(el, tag) {
+      return delay.call(el, function() {
+        return nextAnimationFrame(function() {
+          var _jquery, _ref;
+          _jquery = (_ref = tag._jquery) != null ? _ref : tag;
+          if (!((_jquery != null ? _jquery.length : void 0) > 0)) return;
+          el._jquery.replaceWith(_jquery);
+          el._jquery = _jquery;
+          if (el === tpl.xml) return el.jquery = _jquery;
+        });
+      });
     });
     tpl.on('remove', function(el) {
       var _ref;
       return (_ref = el._jquery) != null ? _ref.remove() : void 0;
     });
     tpl.on('end', function() {
-      tpl.jquery = tpl.xml._jquery = $(tpl.xml._children);
-      return delete tpl.xml._children;
+      tpl.xml._jquery = $();
+      release.call(tpl.xml);
+      return tpl.jquery = tpl.xml._jquery;
     });
     old_query = tpl.xml.query;
     tpl.xml.query = function(type, tag, key) {
@@ -379,20 +457,28 @@ require.define("/dynamictemplate-jquery.coffee", function (require, module, expo
         return tag._jquery.attr(key);
       } else if (type === 'text') {
         return tag._jquery.text();
+      } else if (type === 'tag') {
+        if (key._jquery != null) {
+          return key;
+        } else {
+          return {
+            _jquery: key
+          };
+        }
       }
     };
     return tpl;
   };
 
-  module.exports = jquerify;
+  module.exports = jqueryify;
 
   if (process.title === 'browser') {
     (function() {
       if (this.dynamictemplate != null) {
-        return this.dynamictemplate.jquerify = jquerify;
+        return this.dynamictemplate.jqueryify = jqueryify;
       } else {
         return this.dynamictemplate = {
-          jquerify: jquerify
+          jqueryify: jqueryify
         };
       }
     }).call(window);
@@ -401,5 +487,37 @@ require.define("/dynamictemplate-jquery.coffee", function (require, module, expo
 }).call(this);
 
 });
-require("/dynamictemplate-jquery.coffee");
+
+require.define("/node_modules/request-animation-frame/package.json", function (require, module, exports, __dirname, __filename) {
+    module.exports = {"name":"request-animation-frame","description":"requestAnimationFrame shim","version":"0.0.1","homepage":"https://github.com/dodo/requestAnimationFrame.js","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/requestAnimationFrame.js.git"},"main":"shim.js","engines":{"node":">= 0.4.x"},"keywords":["request","animation","frame","shim","browser","polyfill"],"scripts":{"prepublish":"cake build"},"devDependencies":{"muffin":">= 0.2.6","coffee-script":">= 1.1.2"}}
+});
+
+require.define("/node_modules/request-animation-frame/shim.js", function (require, module, exports, __dirname, __filename) {
+    
+module.exports = require('./lib/shim')
+
+});
+
+require.define("/node_modules/request-animation-frame/lib/shim.js", function (require, module, exports, __dirname, __filename) {
+    
+  this.requestAnimationFrame = (function() {
+    var last, request, vendor, _i, _len, _ref;
+    last = 0;
+    request = typeof window !== "undefined" && window !== null ? window.requestAnimationFrame : void 0;
+    _ref = ["webkit", "moz", "o", "ms"];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      vendor = _ref[_i];
+      if ((request != null ? request : request = typeof window !== "undefined" && window !== null ? window["" + vendor + "RequestAnimationFrame"] : void 0)) {
+        break;
+      }
+    }
+    return request != null ? request : function(callback) {
+      var cur, time;
+      cur = new Date().getTime();
+      time = Math.max(0, 16 - cur + last);
+      return setTimeout(callback, time);
+    };
+  })();
+
+});
 }).call(this);

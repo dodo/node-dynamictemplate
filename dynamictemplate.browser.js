@@ -7,6 +7,7 @@
     var res = mod._cached ? mod._cached : mod();
     return res;
 }
+var __require = require;
 
 require.paths = [];
 require.modules = {};
@@ -135,18 +136,14 @@ require.define = function (filename, fn) {
         : require.modules.path().dirname(filename)
     ;
     
-    var require_ = function (file) {
-        return require(file, dirname)
-    };
+    var require_ = function (file) { return require(file, dirname) };
     require_.resolve = function (name) {
-        return require.resolve(name, dirname);
+      return require.resolve(name, dirname);
     };
     require_.modules = require.modules;
-    require_.define = require.define;
     var module_ = { exports : {} };
     
     require.modules[filename] = function () {
-        require.modules[filename]._cached = module_.exports;
         fn.call(
             module_.exports,
             require_,
@@ -319,38 +316,71 @@ exports.extname = function(path) {
 
 });
 
-require.define("/node_modules/asyncxml/package.json", function (require, module, exports, __dirname, __filename) {
-    module.exports = {"main":"asyncxml.js"}
-});
-
-require.define("/node_modules/asyncxml/asyncxml.js", function (require, module, exports, __dirname, __filename) {
-    
-module.exports = require('./build/default/asyncxml')
-
-});
-
-require.define("/node_modules/asyncxml/build/default/asyncxml.js", function (require, module, exports, __dirname, __filename) {
+require.define("/dynamictemplate.js", function (require, module, exports, __dirname, __filename) {
     (function() {
-  var Builder, Tag, _ref;
-  _ref = require('./xml'), Tag = _ref.Tag, Builder = _ref.Builder;
-  this.asyncxml = module.exports = {
+  var Builder, Tag, Template, _ref;
+
+  _ref = require('asyncxml'), Tag = _ref.Tag, Builder = _ref.Builder;
+
+  Template = require('./template');
+
+  module.exports = {
     Tag: Tag,
-    Builder: Builder
+    Builder: Builder,
+    Template: Template
   };
+
+  if (process.title === 'browser') {
+    (function() {
+      if (this.dynamictemplate != null) {
+        this.dynamictemplate.Template = Template;
+        this.dynamictemplate.Builder = Builder;
+        return this.dynamictemplate.Tag = Tag;
+      } else {
+        return this.dynamictemplate = module.exports;
+      }
+    }).call(window);
+  }
+
 }).call(this);
 
 });
 
-require.define("/node_modules/asyncxml/build/default/xml.js", function (require, module, exports, __dirname, __filename) {
+require.define("/node_modules/asyncxml/package.json", function (require, module, exports, __dirname, __filename) {
+    module.exports = {"name":"asyncxml","description":"async xml builder and generator","version":"0.2.3","homepage":"https://github.com/dodo/node-asyncxml","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/node-asyncxml.git"},"main":"asyncxml.js","engines":{"node":">= 0.4.x"},"keywords":["async","xml","generation","stream","browser"],"scripts":{"test":"cake build && nodeunit test","prepublish":"cake build"},"devDependencies":{"coffee-script":">= 1.1.2","muffin":">= 0.2.6","browserify":"1.6.1","scopify":">= 0.1.0","nodeunit":">= 0.5.4"},"licenses":[{"type":"MIT","url":"http://github.com/dodo/node-asyncxml/raw/master/LICENSE"}]}
+});
+
+require.define("/node_modules/asyncxml/asyncxml.js", function (require, module, exports, __dirname, __filename) {
+    
+module.exports = require('./lib/asyncxml')
+
+});
+
+require.define("/node_modules/asyncxml/lib/asyncxml.js", function (require, module, exports, __dirname, __filename) {
     (function() {
-  var Builder, EVENTS, EventEmitter, Tag, deep_merge, flush, new_attrs, new_tag, parse_args, prettify, rmevents, safe, sync_tag, _ref;
+  var Builder, Tag, _ref;
+
+  _ref = require('./xml'), Tag = _ref.Tag, Builder = _ref.Builder;
+
+  this.asyncxml = module.exports = {
+    Tag: Tag,
+    Builder: Builder
+  };
+
+}).call(this);
+
+});
+
+require.define("/node_modules/asyncxml/lib/xml.js", function (require, module, exports, __dirname, __filename) {
+    (function() {
+  var Builder, EVENTS, EventEmitter, Tag, add_tag, deep_merge, flush, new_attrs, new_tag, parse_args, prettify, safe, sync_tag, _ref;
   var __slice = Array.prototype.slice, __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
   EventEmitter = require('events').EventEmitter;
 
   _ref = require('./util'), deep_merge = _ref.deep_merge, prettify = _ref.prettify, new_attrs = _ref.new_attrs, safe = _ref.safe;
 
-  EVENTS = ['add', 'attr', 'attr:remove', 'text', 'remove', 'close'];
+  EVENTS = ['add', 'attr', 'attr:remove', 'text', 'raw', 'show', 'hide', 'remove', 'replace', 'close'];
 
   parse_args = function(name, attrs, children, opts) {
     var _ref2;
@@ -375,85 +405,92 @@ require.define("/node_modules/asyncxml/build/default/xml.js", function (require,
     }
   };
 
-  rmevents = function(events) {
-    var event, _i, _len, _results;
-    this.removeListener('data', events.data);
-    _results = [];
-    for (_i = 0, _len = EVENTS.length; _i < _len; _i++) {
-      event = EVENTS[_i];
-      _results.push(this.removeListener(event, events[event]));
-    }
-    return _results;
-  };
-
-  new_tag = function() {
-    var attrs, children, events, name, newtag, opts, _ref2, _ref3;
+  add_tag = function(newtag, callback) {
+    var wire_tag;
     var _this = this;
-    _ref2 = parse_args.apply(null, arguments), name = _ref2[0], attrs = _ref2[1], children = _ref2[2], opts = _ref2[3];
-    events = {};
-    if ((_ref3 = opts.level) == null) opts.level = this.level + 1;
-    opts = deep_merge(this.builder.opts, opts);
-    opts.builder = this.builder;
-    newtag = new this.builder.Tag(name, attrs, null, opts);
-    newtag.parent = this;
-    this.builder.approve(this, newtag, function(_, tag) {
-      var event, on_end, pipe, _i, _len;
-      tag.on('data', events.data = function(data) {
-        if (_this.pending[0] === tag) {
-          return _this.write(data);
-        } else {
-          return _this.buffer.push(data);
-        }
-      });
-      pipe = function(event) {
-        return tag.on(event, events[event] = function() {
-          return _this.emit.apply(_this, [event].concat(__slice.call(arguments)));
+    if (newtag == null) return callback != null ? callback.call(this) : void 0;
+    wire_tag = function(_, tag) {
+      var event, on_end, pipe, _i, _len, _ref2, _ref3;
+      if ((_ref2 = tag.builder) == null) tag.builder = _this.builder;
+      if ((_ref3 = tag.parent) == null) tag.parent = _this;
+      if (typeof tag.on === "function") {
+        tag.on('data', function(data) {
+          if (_this.pending[0] === tag) {
+            return _this.write(data);
+          } else {
+            return _this.buffer.push(data);
+          }
         });
+      }
+      pipe = function(event) {
+        return typeof tag.on === "function" ? tag.on(event, function() {
+          return _this.emit.apply(_this, [event].concat(__slice.call(arguments)));
+        }) : void 0;
       };
       for (_i = 0, _len = EVENTS.length; _i < _len; _i++) {
         event = EVENTS[_i];
         pipe(event);
       }
-      tag.once('end', on_end = function() {
-        var before, i, known, _len2, _ref4;
-        if (_this.pending[0] === tag) {
-          if (tag.pending.length) {
-            tag.pending[0].once('end', on_end);
+      if (typeof tag.once === "function") {
+        tag.once('end', on_end = function() {
+          var before, i, known, _len2, _ref4;
+          if (_this.pending[0] === tag) {
+            if (tag.pending.length) {
+              tag.pending[0].once('end', on_end);
+            } else {
+              if (tag.buffer.length) {
+                _this.buffer = _this.buffer.concat(tag.buffer);
+                tag.buffer = [];
+              }
+              _this.pending = _this.pending.slice(1);
+              flush.call(_this);
+              if (_this.closed && _this.pending.length === 0) _this.end();
+            }
           } else {
-            if (tag.buffer.length) {
-              _this.buffer = _this.buffer.concat(tag.buffer);
-              tag.buffer = [];
-            }
-            _this.pending = _this.pending.slice(1);
-            rmevents.call(tag, events);
-            flush.call(_this);
-            if (_this.closed && _this.pending.length === 0) _this.end();
-          }
-        } else {
-          _ref4 = _this.pending;
-          for (i = 0, _len2 = _ref4.length; i < _len2; i++) {
-            known = _ref4[i];
-            if (tag === known) {
-              _this.pending = _this.pending.slice(0, i).concat(_this.pending.slice(i + 1));
-              if (_this.buffer.length) {
-                before = _this.pending[i - 1];
-                before.buffer = before.buffer.concat(_this.buffer);
-                _this.buffer = [];
+            _ref4 = _this.pending;
+            for (i = 0, _len2 = _ref4.length; i < _len2; i++) {
+              known = _ref4[i];
+              if (tag === known) {
+                _this.pending = _this.pending.slice(0, i).concat(_this.pending.slice(i + 1));
+                if (_this.buffer.length) {
+                  before = _this.pending[i - 1];
+                  before.buffer = before.buffer.concat(_this.buffer);
+                  _this.buffer = [];
+                }
+                if (_this.closed === 'pending') {
+                  flush.call(_this);
+                  _this.end();
+                }
+                return;
               }
-              rmevents.call(tag, events);
-              if (_this.closed === 'pending') {
-                flush.call(_this);
-                _this.end();
-              }
-              return;
             }
+            throw new Error("this shouldn't happen D:");
           }
-          throw new Error("this shouldn't happen D:");
-        }
-      });
-      _this.pending.push(tag);
-      _this.emit('new', tag);
-      _this.emit('add', tag);
+        });
+      }
+      if (tag.closed === false) _this.pending.push(tag);
+      _this.emit('add', _this, tag);
+      if (tag.closed) if (typeof tag.emit === "function") tag.emit('close', tag);
+      return callback != null ? callback.call(_this, tag) : void 0;
+    };
+    if (this.builder != null) {
+      return this.builder.approve('new', this, newtag, wire_tag);
+    } else {
+      return wire_tag(this, newtag);
+    }
+  };
+
+  new_tag = function() {
+    var TagInstance, attrs, children, name, newtag, opts, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7;
+    _ref2 = parse_args.apply(null, arguments), name = _ref2[0], attrs = _ref2[1], children = _ref2[2], opts = _ref2[3];
+    if ((_ref3 = opts.level) == null) opts.level = this.level + 1;
+    opts = deep_merge((_ref4 = (_ref5 = this.builder) != null ? _ref5.opts : void 0) != null ? _ref4 : {}, opts);
+    opts.builder = this.builder;
+    TagInstance = (_ref6 = (_ref7 = this.builder) != null ? _ref7.Tag : void 0) != null ? _ref6 : Tag;
+    newtag = new TagInstance(name, attrs, null, opts);
+    newtag.parent = this;
+    add_tag.call(this, newtag, function(tag) {
+      this.emit('new', tag);
       if (children != null) return tag.children(children, opts);
     });
     return newtag;
@@ -475,25 +512,31 @@ require.define("/node_modules/asyncxml/build/default/xml.js", function (require,
 
     function Tag() {
       this.remove = __bind(this.remove, this);
+      this.replace = __bind(this.replace, this);
+      this.add = __bind(this.add, this);
       this.toString = __bind(this.toString, this);
       this.end = __bind(this.end, this);
+      this.hide = __bind(this.hide, this);
+      this.show = __bind(this.show, this);
       this.up = __bind(this.up, this);
       this.write = __bind(this.write, this);
+      this.raw = __bind(this.raw, this);
       this.text = __bind(this.text, this);
       this.children = __bind(this.children, this);
       this.removeAttr = __bind(this.removeAttr, this);
       this.attr = __bind(this.attr, this);
       this.emit = __bind(this.emit, this);
-      var children, opts, _ref2, _ref3;
+      var children, opts, _ref2, _ref3, _ref4;
       _ref2 = parse_args.apply(null, arguments), this.name = _ref2[0], this.attrs = _ref2[1], children = _ref2[2], opts = _ref2[3];
       this.pretty = (_ref3 = opts.pretty) != null ? _ref3 : false;
-      this.level = opts.level;
+      this.level = (_ref4 = opts.level) != null ? _ref4 : 0;
       this.builder = opts.builder;
       this.buffer = [];
       this.pending = [];
       this.parent = this.builder;
       this.closed = false;
       this.writable = true;
+      this.hidden = false;
       this.isempty = true;
       this.content = "";
       this.children(children, opts);
@@ -502,18 +545,18 @@ require.define("/node_modules/asyncxml/build/default/xml.js", function (require,
     }
 
     Tag.prototype.emit = function() {
-      var _ref2;
-      if (this.builder.closed === true && this.parent.closed === true) {
-        return (_ref2 = this.builder).emit.apply(_ref2, arguments);
+      var _ref2, _ref3, _ref4;
+      if (((_ref2 = this.builder) != null ? _ref2.closed : void 0) === true && ((_ref3 = this.parent) != null ? _ref3.closed : void 0) === true) {
+        return (_ref4 = this.builder).emit.apply(_ref4, arguments);
       } else {
         return Tag.__super__.emit.apply(this, arguments);
       }
     };
 
     Tag.prototype.attr = function(key, value) {
-      var attr, k, v;
+      var attr, k, v, _ref2;
       if (typeof key === 'string') {
-        if (!(value != null) && ((attr = this.builder.query('attr', this, key)) != null)) {
+        if (!(value != null) && ((attr = (_ref2 = this.builder) != null ? _ref2.query('attr', this, key) : void 0) != null)) {
           this.attrs[key] = attr;
           return attr;
         }
@@ -557,9 +600,10 @@ require.define("/node_modules/asyncxml/build/default/xml.js", function (require,
     };
 
     Tag.prototype.text = function(content, opts) {
+      var _ref2;
       if (opts == null) opts = {};
-      if (!((content != null) || opts.force)) {
-        return this.content = this.builder.query('text', this);
+      if (content == null) {
+        return this.content = (_ref2 = this.builder) != null ? _ref2.query('text', this) : void 0;
       }
       if (opts.escape) content = safe(content);
       this.write(content, deep_merge(opts, {
@@ -574,10 +618,20 @@ require.define("/node_modules/asyncxml/build/default/xml.js", function (require,
       return this;
     };
 
+    Tag.prototype.raw = function(html, opts) {
+      if (opts == null) opts = {};
+      this.write(html, deep_merge(opts, {
+        escape: false
+      }));
+      this.emit('raw', this, html);
+      return this;
+    };
+
     Tag.prototype.write = function(content, _arg) {
       var escape;
       escape = (_arg != null ? _arg : {}).escape;
       if (escape) content = safe(content);
+      if (this.hidden) return true;
       if (this.isempty) {
         this.emit('data', prettify(this, "<" + this.name + (new_attrs(this.attrs)) + ">"));
         this.isempty = false;
@@ -594,34 +648,75 @@ require.define("/node_modules/asyncxml/build/default/xml.js", function (require,
       return this.parent;
     };
 
+    Tag.prototype.show = function() {
+      this.hidden = false;
+      this.emit('show', this);
+      return this;
+    };
+
+    Tag.prototype.hide = function() {
+      this.hidden = true;
+      this.emit('hide', this);
+      return this;
+    };
+
     Tag.prototype.end = function() {
-      var data;
-      if (!this.closed || this.closed === 'pending') {
+      var close_tag;
+      var _this = this;
+      if (!this.closed || this.closed === 'pending' || this.closed === 'approving') {
         if (this.pending.length) {
           this.closed = 'pending';
-        } else {
-          if (this.isempty) {
-            data = "<" + this.name + (new_attrs(this.attrs)) + "/>";
-            this.closed = 'self';
+        } else if (this.closed !== 'approving') {
+          this.closed = 'approving';
+          close_tag = function() {
+            var data;
+            if (_this.isempty) {
+              data = "<" + _this.name + (new_attrs(_this.attrs)) + "/>";
+              _this.closed = 'self';
+            } else {
+              data = "</" + _this.name + ">";
+              _this.closed = true;
+            }
+            if (!_this.hidden) _this.emit('data', prettify(_this, data));
+            _this.emit('close', _this);
+            _this.emit('end');
+            return _this.writable = false;
+          };
+          if (this.builder != null) {
+            this.builder.approve('end', this, close_tag);
           } else {
-            data = "</" + this.name + ">";
-            this.closed = true;
+            close_tag(this, this);
           }
-          this.emit('data', prettify(this, data));
-          this.emit('close', this);
-          this.emit('end');
         }
       } else if (this.closed === 'removed') {
         this.emit('end');
+        this.writable = false;
       } else {
         this.closed = true;
+        this.writable = false;
       }
-      this.writable = false;
       return this;
     };
 
     Tag.prototype.toString = function() {
       return ("<" + this.name + (new_attrs(this.attrs))) + (this.closed === 'self' ? "/>" : this.closed ? ">" + this.content + "</" + this.name + ">" : void 0);
+    };
+
+    Tag.prototype.add = function(rawtag, callback) {
+      var tag, _ref2;
+      tag = (_ref2 = this.builder) != null ? _ref2.query('tag', this, rawtag) : void 0;
+      if (!((tag != null) || (this.builder != null))) tag = rawtag;
+      if (tag == null) {
+        if (callback != null) callback.call(this);
+        return this;
+      }
+      add_tag.call(this, tag, callback);
+      return this;
+    };
+
+    Tag.prototype.replace = function(tag) {
+      this.emit('replace', this, tag);
+      return this;
     };
 
     Tag.prototype.remove = function() {
@@ -646,7 +741,7 @@ require.define("/node_modules/asyncxml/build/default/xml.js", function (require,
       this.builder = this;
       this.buffer = [];
       this.pending = [];
-      this.checkers = [];
+      this.checkers = {};
       this.closed = false;
       if ((_ref2 = (_base = this.opts).pretty) == null) _base.pretty = false;
       this.level = (_ref3 = this.opts.level) != null ? _ref3 : -1;
@@ -675,21 +770,39 @@ require.define("/node_modules/asyncxml/build/default/xml.js", function (require,
         return tag.attrs[key];
       } else if (type === 'text') {
         return tag.content;
+      } else if (type === 'tag') {
+        return key;
       }
     };
 
-    Builder.prototype.use = function(checker) {
-      return this.checkers.push(checker);
+    Builder.prototype.register = function(type, checker) {
+      var _base, _ref2;
+      if (!(type === 'new' || type === 'end')) {
+        throw new Error("only type 'new' or 'end' allowed.");
+      }
+      if ((_ref2 = (_base = this.checkers)[type]) == null) _base[type] = [];
+      return this.checkers[type].push(checker);
     };
 
-    Builder.prototype.approve = function(parent, tag, callback) {
-      var checkers, next;
-      checkers = this.checkers.slice();
-      next = function(tag) {
-        var checker, _ref2;
-        checker = (_ref2 = checkers.shift()) != null ? _ref2 : callback;
-        return checker(parent, tag, next);
-      };
+    Builder.prototype.approve = function(type, parent, tag, callback) {
+      var checkers, next, _ref2, _ref3, _ref4;
+      checkers = (_ref2 = (_ref3 = this.checkers[type]) != null ? typeof _ref3.slice === "function" ? _ref3.slice() : void 0 : void 0) != null ? _ref2 : [];
+      if (type === 'new') {
+        next = function(tag) {
+          var checker, _ref4;
+          checker = (_ref4 = checkers.shift()) != null ? _ref4 : callback;
+          return checker(parent, tag, next);
+        };
+      } else if (type === 'end') {
+        _ref4 = [tag, parent], callback = _ref4[0], tag = _ref4[1];
+        next = function(tag) {
+          var checker, _ref5;
+          checker = (_ref5 = checkers.shift()) != null ? _ref5 : callback;
+          return checker(tag, next);
+        };
+      } else {
+        throw new Error("type '" + type + "' not supported.");
+      }
       return next(tag);
     };
 
@@ -881,17 +994,17 @@ EventEmitter.prototype.listeners = function(type) {
 
 });
 
-require.define("/node_modules/asyncxml/build/default/util.js", function (require, module, exports, __dirname, __filename) {
+require.define("/node_modules/asyncxml/lib/util.js", function (require, module, exports, __dirname, __filename) {
     (function() {
   var breakline, deep_merge, indent, isArray, new_attrs, prettify, safe;
   var __slice = Array.prototype.slice;
+
   isArray = Array.isArray;
+
   deep_merge = function() {
     var k, obj, objs, res, v, _i, _len;
     objs = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-    if (isArray(objs[0])) {
-      objs = objs[0];
-    }
+    if (isArray(objs[0])) objs = objs[0];
     res = {};
     for (_i = 0, _len = objs.length; _i < _len; _i++) {
       obj = objs[_i];
@@ -906,29 +1019,26 @@ require.define("/node_modules/asyncxml/build/default/util.js", function (require
     }
     return res;
   };
+
   indent = function(_arg) {
     var level, pretty;
     level = _arg.level, pretty = _arg.pretty;
-    if (!pretty || level === 0) {
-      return "";
-    }
-    if (pretty === true) {
-      pretty = "  ";
-    }
+    if (!pretty || level === 0) return "";
+    if (pretty === true) pretty = "  ";
     return pretty;
   };
+
   breakline = function(_arg, data) {
     var level, pretty;
     level = _arg.level, pretty = _arg.pretty;
-    if (!pretty) {
-      return data;
-    }
+    if (!pretty) return data;
     if ((data != null ? data[(data != null ? data.length : void 0) - 1] : void 0) === "\n") {
       return data;
     } else {
       return "" + data + "\n";
     }
   };
+
   prettify = function(el, data) {
     if (!(el != null ? el.pretty : void 0)) {
       return data;
@@ -936,28 +1046,32 @@ require.define("/node_modules/asyncxml/build/default/util.js", function (require
       return "" + (indent(el)) + (breakline(el, data));
     }
   };
+
   new_attrs = function(attrs) {
     var k, strattrs, v;
-    if (attrs == null) {
-      attrs = {};
-    }
+    if (attrs == null) attrs = {};
     strattrs = (function() {
       var _results;
       _results = [];
       for (k in attrs) {
         v = attrs[k];
-        _results.push(v != null ? (typeof v !== 'number' ? v = "\"" + v + "\"" : void 0, "" + k + "=" + v) : "" + k);
+        if (v != null) {
+          if (typeof v !== 'number') v = "\"" + v + "\"";
+          _results.push("" + k + "=" + v);
+        } else {
+          _results.push("" + k);
+        }
       }
       return _results;
     })();
-    if (strattrs.length) {
-      strattrs.unshift('');
-    }
+    if (strattrs.length) strattrs.unshift('');
     return strattrs.join(' ');
   };
+
   safe = function(text) {
     return String(text).replace(/&(?!\w+;)/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
   };
+
   module.exports = {
     deep_merge: deep_merge,
     prettify: prettify,
@@ -965,20 +1079,195 @@ require.define("/node_modules/asyncxml/build/default/util.js", function (require
     new_attrs: new_attrs,
     safe: safe
   };
+
 }).call(this);
 
 });
 
-require.define("/template.coffee", function (require, module, exports, __dirname, __filename) {
+require.define("/template.js", function (require, module, exports, __dirname, __filename) {
     (function() {
-  var DefaultBuilder, EVENTS, EventEmitter, Template, aliases, doctype, ff, pp, schema, self_closing;
+  var DefaultBuilder, EVENTS, EventEmitter, Template, aliases, doctype, ff, pp, schema, self_closing, _ref;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; }, __slice = Array.prototype.slice;
 
   EventEmitter = require('events').EventEmitter;
 
   DefaultBuilder = require('asyncxml').Builder;
 
-  EVENTS = ['new', 'add', 'attr', 'attr:remove', 'text', 'remove', 'data', 'close', 'end'];
+  _ref = require('./schema'), schema = _ref.schema, self_closing = _ref.self_closing;
+
+  doctype = require('./doctype').doctype;
+
+  aliases = require('./alias').aliases;
+
+  EVENTS = ['new', 'add', 'show', 'hide', 'attr', 'attr:remove', 'text', 'raw', 'remove', 'replace', 'data', 'close', 'end'];
+
+  pp = function(proto, name) {
+    proto[name] = function() {
+      var _ref2;
+      return this.tag.apply(this, (_ref2 = [name]).concat.apply(_ref2, arguments));
+    };
+    return proto["$" + name] = function() {
+      var _ref2;
+      return this.$tag.apply(this, (_ref2 = [name]).concat.apply(_ref2, arguments));
+    };
+  };
+
+  ff = function(proto, tags) {
+    var tagname, _i, _len;
+    for (_i = 0, _len = tags.length; _i < _len; _i++) {
+      tagname = tags[_i];
+      if (tagname) pp(proto, tagname);
+    }
+  };
+
+  Template = (function() {
+
+    __extends(Template, EventEmitter);
+
+    function Template(opts, template) {
+      var Builder, ExtendedBuilder, ExtendedTag, Tag, end_tag, s, schema_input, _ref2, _ref3, _ref4, _ref5, _ref6;
+      var _this = this;
+      if (opts == null) opts = {};
+      this.ready = __bind(this.ready, this);
+      this.end = __bind(this.end, this);
+      this.register = __bind(this.register, this);
+      if (typeof opts === 'function') {
+        _ref2 = [opts, {}], template = _ref2[0], opts = _ref2[1];
+      }
+      if ((_ref3 = opts.encoding) == null) opts.encoding = 'utf-8';
+      if ((_ref4 = opts.doctype) == null) opts.doctype = false;
+      if ((_ref5 = opts.end) == null) opts.end = true;
+      schema_input = opts.schema;
+      s = aliases[schema_input] || schema_input || 'xml';
+      opts.self_closing = typeof self_closing[s] === "function" ? self_closing[s](opts) : void 0;
+      opts.schema = typeof schema[s] === "function" ? schema[s](opts).split(' ') : void 0;
+      Builder = (_ref6 = opts.Builder) != null ? _ref6 : DefaultBuilder;
+      ExtendedBuilder = (function() {
+
+        __extends(ExtendedBuilder, Builder);
+
+        function ExtendedBuilder() {
+          ExtendedBuilder.__super__.constructor.apply(this, arguments);
+        }
+
+        return ExtendedBuilder;
+
+      })();
+      ff(ExtendedBuilder.prototype, opts.schema);
+      this.xml = new ExtendedBuilder(opts);
+      Tag = this.xml.Tag;
+      ExtendedTag = (function() {
+
+        __extends(ExtendedTag, Tag);
+
+        function ExtendedTag() {
+          ExtendedTag.__super__.constructor.apply(this, arguments);
+        }
+
+        return ExtendedTag;
+
+      })();
+      ff(ExtendedTag.prototype, opts.schema);
+      this.xml.Tag = this.xml.opts.Tag = ExtendedTag;
+      end_tag = Tag.prototype.end;
+      this.xml.Tag.prototype.end = function() {
+        if (opts.self_closing === true || opts.self_closing.match(this.name)) {
+          return end_tag.call.apply(end_tag, [this].concat(__slice.call(arguments)));
+        } else {
+          if (this.isempty) {
+            this.text("", {
+              force: true
+            });
+          }
+          return end_tag.call.apply(end_tag, [this].concat(__slice.call(arguments)));
+        }
+      };
+      EVENTS.forEach(function(event) {
+        return _this.xml.on(event, function() {
+          var args;
+          args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
+          return _this.emit.apply(_this, [event].concat(__slice.call(args)));
+        });
+      });
+      process.nextTick(function() {
+        var d, dt;
+        if (opts.doctype === true) opts.doctype = 'html';
+        d = aliases[opts.doctype] || opts.doctype;
+        if (opts.doctype && (dt = typeof doctype[d] === "function" ? doctype[d](opts) : void 0)) {
+          if (opts.pretty) dt += "\n";
+          _this.xml.emit('data', dt);
+        }
+        if (typeof template === 'function') {
+          template.call(_this.xml);
+          if (opts.end) return _this.end();
+        } else {
+          return _this.end(template);
+        }
+      });
+    }
+
+    Template.prototype.register = function() {
+      var _ref2;
+      return (_ref2 = this.xml).register.apply(_ref2, arguments);
+    };
+
+    Template.prototype.end = function() {
+      var _ref2;
+      return (_ref2 = this.xml).end.apply(_ref2, arguments);
+    };
+
+    Template.prototype.ready = function(callback) {
+      if (this.xml.closed === true) {
+        return callback();
+      } else {
+        return this.xml.once('end', callback);
+      }
+    };
+
+    return Template;
+
+  })();
+
+  Template.schema = schema;
+
+  Template.doctype = doctype;
+
+  module.exports = Template;
+
+  Template.self_closing = self_closing;
+
+  /*
+  
+  fallbeispiel: (als liste)
+      tag A
+      tag B (anderes template)
+      tag C
+  
+  3 anwendungsfälle:
+  
+      1. alles auf serverseite:
+          - C muss warten bis B fertig ist
+          - kein jqueryify
+          - nur on data zum client streamen
+  
+      2. leeres layout auf server site und rest mit content auf client side:
+          - anstatt B sollte ein dummy tag kommen
+          - jqueryify auf client side und dummy tag replacen
+          - on data für leeres layout und jquery objects auf client side
+  
+      3. alles auf client side:
+          - kein on data (oder doch in jqueryify?)
+          - nur jqueryify
+          - anstatt tag B kommt dummy, der replaced wird wenn dieses template zu ende ist (also nach tag C)
+  */
+
+}).call(this);
+
+});
+
+require.define("/schema.js", function (require, module, exports, __dirname, __filename) {
+    (function() {
+  var schema, self_closing;
 
   schema = {
     'xml': function() {
@@ -1049,6 +1338,19 @@ require.define("/template.coffee", function (require, module, exports, __dirname
     }
   };
 
+  module.exports = {
+    self_closing: self_closing,
+    schema: schema
+  };
+
+}).call(this);
+
+});
+
+require.define("/doctype.js", function (require, module, exports, __dirname, __filename) {
+    (function() {
+  var doctype;
+
   doctype = {
     'xml': function(_arg) {
       var encoding;
@@ -1084,6 +1386,18 @@ require.define("/template.coffee", function (require, module, exports, __dirname
     }
   };
 
+  module.exports = {
+    doctype: doctype
+  };
+
+}).call(this);
+
+});
+
+require.define("/alias.js", function (require, module, exports, __dirname, __filename) {
+    (function() {
+  var aliases;
+
   aliases = {
     'default': 'xml',
     '5': 'html5',
@@ -1100,154 +1414,11 @@ require.define("/template.coffee", function (require, module, exports, __dirname
     'xhtml-trasitional': 'transitional'
   };
 
-  pp = function(proto, name) {
-    proto[name] = function() {
-      var _ref;
-      return this.tag.apply(this, (_ref = [name]).concat.apply(_ref, arguments));
-    };
-    return proto["$" + name] = function() {
-      var _ref;
-      return this.$tag.apply(this, (_ref = [name]).concat.apply(_ref, arguments));
-    };
-  };
-
-  ff = function(proto, tags) {
-    var tagname, _i, _len;
-    for (_i = 0, _len = tags.length; _i < _len; _i++) {
-      tagname = tags[_i];
-      if (tagname) pp(proto, tagname);
-    }
-  };
-
-  Template = (function() {
-
-    __extends(Template, EventEmitter);
-
-    function Template(opts, template) {
-      var Builder, ExtendedBuilder, ExtendedTag, Tag, end_tag, s, schema_input, _ref, _ref2, _ref3, _ref4, _ref5;
-      var _this = this;
-      if (opts == null) opts = {};
-      this.end = __bind(this.end, this);
-      if (typeof opts === 'function') {
-        _ref = [opts, {}], template = _ref[0], opts = _ref[1];
-      }
-      if ((_ref2 = opts.encoding) == null) opts.encoding = 'utf-8';
-      if ((_ref3 = opts.doctype) == null) opts.doctype = false;
-      if ((_ref4 = opts.end) == null) opts.end = true;
-      schema_input = opts.schema;
-      s = aliases[schema_input] || schema_input || 'xml';
-      opts.self_closing = typeof self_closing[s] === "function" ? self_closing[s](opts) : void 0;
-      opts.schema = typeof schema[s] === "function" ? schema[s](opts).split(' ') : void 0;
-      Builder = (_ref5 = opts.Builder) != null ? _ref5 : DefaultBuilder;
-      ExtendedBuilder = (function() {
-
-        __extends(ExtendedBuilder, Builder);
-
-        function ExtendedBuilder() {
-          ExtendedBuilder.__super__.constructor.apply(this, arguments);
-        }
-
-        return ExtendedBuilder;
-
-      })();
-      ff(ExtendedBuilder.prototype, opts.schema);
-      this.xml = new ExtendedBuilder(opts);
-      Tag = this.xml.Tag;
-      ExtendedTag = (function() {
-
-        __extends(ExtendedTag, Tag);
-
-        function ExtendedTag() {
-          ExtendedTag.__super__.constructor.apply(this, arguments);
-        }
-
-        return ExtendedTag;
-
-      })();
-      ff(ExtendedTag.prototype, opts.schema);
-      this.xml.Tag = this.xml.opts.Tag = ExtendedTag;
-      end_tag = Tag.prototype.end;
-      this.xml.Tag.prototype.end = function() {
-        if (opts.self_closing === true || opts.self_closing.match(this.name)) {
-          return end_tag.call.apply(end_tag, [this].concat(__slice.call(arguments)));
-        } else {
-          this.text("", {
-            force: this.isempty ? true : void 0
-          });
-          return end_tag.call.apply(end_tag, [this].concat(__slice.call(arguments)));
-        }
-      };
-      EVENTS.forEach(function(event) {
-        return _this.xml.on(event, function() {
-          var args;
-          args = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-          return _this.emit.apply(_this, [event].concat(__slice.call(args)));
-        });
-      });
-      process.nextTick(function() {
-        var d, dt;
-        if (opts.doctype === true) opts.doctype = 'html';
-        d = aliases[opts.doctype] || opts.doctype;
-        if (opts.doctype && (dt = typeof doctype[d] === "function" ? doctype[d](opts) : void 0)) {
-          if (opts.pretty) dt += "\n";
-          _this.xml.emit('data', dt);
-        }
-        if (typeof template === 'function') {
-          template.call(_this.xml);
-          if (opts.end) return _this.end();
-        } else {
-          return _this.end(template);
-        }
-      });
-    }
-
-    Template.prototype.end = function() {
-      var _ref;
-      return (_ref = this.xml).end.apply(_ref, arguments);
-    };
-
-    return Template;
-
-  })();
-
-  Template.schema = schema;
-
-  module.exports = Template;
-
-  Template.self_closing = self_closing;
-
-}).call(this);
-
-});
-
-require.define("/dynamictemplate.coffee", function (require, module, exports, __dirname, __filename) {
-    (function() {
-  var Builder, Tag, Template, _ref;
-
-  _ref = require('asyncxml'), Tag = _ref.Tag, Builder = _ref.Builder;
-
-  Template = require('./template');
-
   module.exports = {
-    Tag: Tag,
-    Builder: Builder,
-    Template: Template
+    aliases: aliases
   };
-
-  if (process.title === 'browser') {
-    (function() {
-      if (this.dynamictemplate != null) {
-        this.dynamictemplate.Template = Template;
-        this.dynamictemplate.Builder = Builder;
-        return this.dynamictemplate.Tag = Tag;
-      } else {
-        return this.dynamictemplate = module.exports;
-      }
-    }).call(window);
-  }
 
 }).call(this);
 
 });
-require("/dynamictemplate.coffee");
 }).call(this);
