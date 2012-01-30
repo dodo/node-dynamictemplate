@@ -45,6 +45,7 @@ animation = jqueryify new Template schema:5, ->
     @$div class:'controls', ->
         button this, "start", "▸"
         button this, "stop",  "■"
+        @$a href:"./animation.coffee", "Source Code"
     @$div class:'canvas', ->
         createSquare this
         createSquare this
