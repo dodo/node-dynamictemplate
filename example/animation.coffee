@@ -33,7 +33,9 @@ createSquare = (tag, col) ->
             createSquare(this, differ(col))
             createSquare(this, differ(col))
         ,(300 + 4*sat)
+        @parent.once('remove', @remove)
         @once 'remove', ->
+            @parent.removeListener('remove', @remove)
             clearInterval(interval)
 
 
