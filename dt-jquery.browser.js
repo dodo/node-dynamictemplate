@@ -318,35 +318,10 @@ exports.extname = function(path) {
 
 require.define("/dt-jquery.js", function (require, module, exports, __dirname, __filename) {
     (function() {
-  var delay, frame_queue, jqueryify, nextAnimationFrame, release, requestAnimationFrame, work_frame_queue;
+  var Animation, delay, jqueryify, release;
   var __slice = Array.prototype.slice;
 
-  requestAnimationFrame = require('request-animation-frame').requestAnimationFrame;
-
-  frame_queue = [];
-
-  nextAnimationFrame = function(cb) {
-    var next;
-    frame_queue.push(cb);
-    next = function() {
-      return requestAnimationFrame(function() {
-        work_frame_queue();
-        if (frame_queue.length) return next();
-      });
-    };
-    if (frame_queue.length === 1) return next();
-  };
-
-  work_frame_queue = function() {
-    var t1, t2, _base, _results;
-    t1 = t2 = new Date().getTime();
-    _results = [];
-    while (frame_queue.length && t2 - t1 < 5) {
-      if (typeof (_base = frame_queue.shift()) === "function") _base();
-      _results.push(t2 = new Date().getTime());
-    }
-    return _results;
-  };
+  Animation = require('animation').Animation;
 
   delay = function(job) {
     var _ref;
@@ -371,7 +346,16 @@ require.define("/dt-jquery.js", function (require, module, exports, __dirname, _
   };
 
   jqueryify = function(tpl) {
-    var old_query;
+    var animation, nextAnimationFrame, old_query;
+    animation = new Animation({
+      execution: '5ms',
+      timeout: '120ms',
+      toggle: true
+    });
+    nextAnimationFrame = function(callback) {
+      return animation.push(callback);
+    };
+    animation.start();
     tpl.on('add', function(parent, el) {
       return delay.call(parent, function() {
         if (parent === tpl.xml) {
@@ -488,36 +472,440 @@ require.define("/dt-jquery.js", function (require, module, exports, __dirname, _
 
 });
 
-require.define("/node_modules/request-animation-frame/package.json", function (require, module, exports, __dirname, __filename) {
-    module.exports = {"name":"request-animation-frame","description":"requestAnimationFrame shim","version":"0.0.1","homepage":"https://github.com/dodo/requestAnimationFrame.js","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/requestAnimationFrame.js.git"},"main":"shim.js","engines":{"node":">= 0.4.x"},"keywords":["request","animation","frame","shim","browser","polyfill"],"scripts":{"prepublish":"cake build"},"devDependencies":{"muffin":">= 0.2.6","coffee-script":">= 1.1.2"}}
+require.define("/node_modules/animation/package.json", function (require, module, exports, __dirname, __filename) {
+    module.exports = {"name":"animation","description":"animation frame interval","version":"0.0.1","homepage":"https://github.com/dodo/node-animation","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/node-animation.git"},"main":"animation.js","engines":{"node":">= 0.4.x"},"keywords":["request","animation","frame","interval","node","browser"],"scripts":{"prepublish":"cake build"},"dependencies":{"ms":">= 0.1.0","request-animation-frame":">= 0.0.1"},"devDependencies":{"muffin":">= 0.2.6","coffee-script":">= 1.1.2"}}
 });
 
-require.define("/node_modules/request-animation-frame/shim.js", function (require, module, exports, __dirname, __filename) {
+require.define("/node_modules/animation/animation.js", function (require, module, exports, __dirname, __filename) {
+    
+module.exports = require('./lib/animation')
+
+});
+
+require.define("/node_modules/animation/lib/animation.js", function (require, module, exports, __dirname, __filename) {
+    (function() {
+  var EventEmitter, cancelAnimationFrame, ms, now, requestAnimationFrame, _ref;
+  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+  EventEmitter = require('events').EventEmitter;
+
+  _ref = require('request-animation-frame'), requestAnimationFrame = _ref.requestAnimationFrame, cancelAnimationFrame = _ref.cancelAnimationFrame;
+
+  ms = require('ms');
+
+  now = function() {
+    return new Date().getTime();
+  };
+
+  requestAnimationFrame = (function() {
+    var orig;
+    orig = requestAnimationFrame;
+    return function(callback, timeout) {
+      if (orig.isNative) {
+        return orig(callback);
+      } else {
+        return orig(callback, timeout);
+      }
+    };
+  })();
+
+  this.Animation = (function() {
+
+    __extends(Animation, EventEmitter);
+
+    function Animation(opts) {
+      var _ref2, _ref3;
+      if (opts == null) opts = {};
+      this.nextTick = __bind(this.nextTick, this);
+      this.executiontime = ms((_ref2 = opts.execution) != null ? _ref2 : 5);
+      this.timeouttime = opts.timeout;
+      if (this.timeouttime != null) this.timeouttime = ms(this.timeouttime);
+      this.autotoggle = (_ref3 = opts.toggle) != null ? _ref3 : false;
+      this.frametime = opts.frame;
+      if (this.frametime != null) this.frametime = ms(this.frametime);
+      this.queue = [];
+      this.running = false;
+      this.paused = false;
+      Animation.__super__.constructor.apply(this, arguments);
+    }
+
+    Animation.prototype.work_queue = function(started, dt) {
+      var t, _base, _results;
+      t = now();
+      _results = [];
+      while (this.queue.length && t - started < this.executiontime) {
+        if (typeof (_base = this.queue.shift()) === "function") _base();
+        _results.push(t = now());
+      }
+      return _results;
+    };
+
+    Animation.prototype.push = function(callback) {
+      this.queue.push(callback);
+      if (this.running && this.autotoggle) return this.resume();
+    };
+
+    Animation.prototype.nextTick = function(callback) {
+      var frame, request, t, tick, timeout, _ref2;
+      var _this = this;
+      _ref2 = [null, null], timeout = _ref2[0], request = _ref2[1];
+      t = now();
+      tick = function(success) {
+        var dt, started;
+        started = now();
+        dt = started - t;
+        if (success) {
+          clearTimeout(timeout);
+        } else {
+          cancelAnimationFrame(request);
+        }
+        this.emit('tick', dt);
+        if (typeof callback === "function") callback(dt);
+        this.work_queue(started, dt);
+        if (this.running && !this.paused) {
+          if (this.queue.length) {
+            return this.nextTick();
+          } else {
+            if (this.autotoggle) {
+              return this.pause();
+            } else {
+              return this.nextTick();
+            }
+          }
+        }
+      };
+      frame = function() {
+        var dt, started;
+        if (_this.frametime == null) tick.call(_this, true);
+        started = now();
+        dt = started - t;
+        if (dt < _this.frametime * 0.8) {
+          return request = requestAnimationFrame(frame, _this.frametime);
+        } else {
+          return tick.call(_this, true);
+        }
+      };
+      request = requestAnimationFrame(frame, this.frametime);
+      if (this.timeoutime != null) {
+        return timeout = setTimeout(tick.bind(this, false), this.timeouttime);
+      }
+    };
+
+    Animation.prototype.start = function() {
+      if (this.running) return;
+      this.running = true;
+      this.emit('start');
+      if (!this.paused) {
+        if (this.autotoggle) {
+          if (this.queue.length) {
+            return this.nextTick();
+          } else {
+            return this.pause();
+          }
+        } else {
+          return this.nextTick();
+        }
+      }
+    };
+
+    Animation.prototype.stop = function() {
+      if (!this.running) return;
+      this.running = false;
+      return this.emit('stop');
+    };
+
+    Animation.prototype.pause = function() {
+      if (this.paused) return;
+      this.paused = true;
+      return this.emit('pause');
+    };
+
+    Animation.prototype.resume = function() {
+      if (!this.paused) return;
+      this.paused = false;
+      this.emit('resume');
+      if (this.running && (!this.autotoggle || this.queue.length === 1)) {
+        return this.nextTick();
+      }
+    };
+
+    return Animation;
+
+  })();
+
+}).call(this);
+
+});
+
+require.define("events", function (require, module, exports, __dirname, __filename) {
+    if (!process.EventEmitter) process.EventEmitter = function () {};
+
+var EventEmitter = exports.EventEmitter = process.EventEmitter;
+var isArray = typeof Array.isArray === 'function'
+    ? Array.isArray
+    : function (xs) {
+        return Object.toString.call(xs) === '[object Array]'
+    }
+;
+
+// By default EventEmitters will print a warning if more than
+// 10 listeners are added to it. This is a useful default which
+// helps finding memory leaks.
+//
+// Obviously not all Emitters should be limited to 10. This function allows
+// that to be increased. Set to zero for unlimited.
+var defaultMaxListeners = 10;
+EventEmitter.prototype.setMaxListeners = function(n) {
+  if (!this._events) this._events = {};
+  this._events.maxListeners = n;
+};
+
+
+EventEmitter.prototype.emit = function(type) {
+  // If there is no 'error' event listener then throw.
+  if (type === 'error') {
+    if (!this._events || !this._events.error ||
+        (isArray(this._events.error) && !this._events.error.length))
+    {
+      if (arguments[1] instanceof Error) {
+        throw arguments[1]; // Unhandled 'error' event
+      } else {
+        throw new Error("Uncaught, unspecified 'error' event.");
+      }
+      return false;
+    }
+  }
+
+  if (!this._events) return false;
+  var handler = this._events[type];
+  if (!handler) return false;
+
+  if (typeof handler == 'function') {
+    switch (arguments.length) {
+      // fast cases
+      case 1:
+        handler.call(this);
+        break;
+      case 2:
+        handler.call(this, arguments[1]);
+        break;
+      case 3:
+        handler.call(this, arguments[1], arguments[2]);
+        break;
+      // slower
+      default:
+        var args = Array.prototype.slice.call(arguments, 1);
+        handler.apply(this, args);
+    }
+    return true;
+
+  } else if (isArray(handler)) {
+    var args = Array.prototype.slice.call(arguments, 1);
+
+    var listeners = handler.slice();
+    for (var i = 0, l = listeners.length; i < l; i++) {
+      listeners[i].apply(this, args);
+    }
+    return true;
+
+  } else {
+    return false;
+  }
+};
+
+// EventEmitter is defined in src/node_events.cc
+// EventEmitter.prototype.emit() is also defined there.
+EventEmitter.prototype.addListener = function(type, listener) {
+  if ('function' !== typeof listener) {
+    throw new Error('addListener only takes instances of Function');
+  }
+
+  if (!this._events) this._events = {};
+
+  // To avoid recursion in the case that type == "newListeners"! Before
+  // adding it to the listeners, first emit "newListeners".
+  this.emit('newListener', type, listener);
+
+  if (!this._events[type]) {
+    // Optimize the case of one listener. Don't need the extra array object.
+    this._events[type] = listener;
+  } else if (isArray(this._events[type])) {
+
+    // Check for listener leak
+    if (!this._events[type].warned) {
+      var m;
+      if (this._events.maxListeners !== undefined) {
+        m = this._events.maxListeners;
+      } else {
+        m = defaultMaxListeners;
+      }
+
+      if (m && m > 0 && this._events[type].length > m) {
+        this._events[type].warned = true;
+        console.error('(node) warning: possible EventEmitter memory ' +
+                      'leak detected. %d listeners added. ' +
+                      'Use emitter.setMaxListeners() to increase limit.',
+                      this._events[type].length);
+        console.trace();
+      }
+    }
+
+    // If we've already got an array, just append.
+    this._events[type].push(listener);
+  } else {
+    // Adding the second element, need to change to array.
+    this._events[type] = [this._events[type], listener];
+  }
+
+  return this;
+};
+
+EventEmitter.prototype.on = EventEmitter.prototype.addListener;
+
+EventEmitter.prototype.once = function(type, listener) {
+  var self = this;
+  self.on(type, function g() {
+    self.removeListener(type, g);
+    listener.apply(this, arguments);
+  });
+
+  return this;
+};
+
+EventEmitter.prototype.removeListener = function(type, listener) {
+  if ('function' !== typeof listener) {
+    throw new Error('removeListener only takes instances of Function');
+  }
+
+  // does not use listeners(), so no side effect of creating _events[type]
+  if (!this._events || !this._events[type]) return this;
+
+  var list = this._events[type];
+
+  if (isArray(list)) {
+    var i = list.indexOf(listener);
+    if (i < 0) return this;
+    list.splice(i, 1);
+    if (list.length == 0)
+      delete this._events[type];
+  } else if (this._events[type] === listener) {
+    delete this._events[type];
+  }
+
+  return this;
+};
+
+EventEmitter.prototype.removeAllListeners = function(type) {
+  // does not use listeners(), so no side effect of creating _events[type]
+  if (type && this._events && this._events[type]) this._events[type] = null;
+  return this;
+};
+
+EventEmitter.prototype.listeners = function(type) {
+  if (!this._events) this._events = {};
+  if (!this._events[type]) this._events[type] = [];
+  if (!isArray(this._events[type])) {
+    this._events[type] = [this._events[type]];
+  }
+  return this._events[type];
+};
+
+});
+
+require.define("/node_modules/animation/node_modules/request-animation-frame/package.json", function (require, module, exports, __dirname, __filename) {
+    module.exports = {"name":"request-animation-frame","description":"requestAnimationFrame shim","version":"0.1.0","homepage":"https://github.com/dodo/requestAnimationFrame.js","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/requestAnimationFrame.js.git"},"main":"shim.js","engines":{"node":">= 0.4.x"},"keywords":["request","animation","frame","shim","browser","polyfill"],"scripts":{"prepublish":"cake build"},"devDependencies":{"muffin":">= 0.2.6","coffee-script":">= 1.1.2"}}
+});
+
+require.define("/node_modules/animation/node_modules/request-animation-frame/shim.js", function (require, module, exports, __dirname, __filename) {
     
 module.exports = require('./lib/shim')
 
 });
 
-require.define("/node_modules/request-animation-frame/lib/shim.js", function (require, module, exports, __dirname, __filename) {
-    
-  this.requestAnimationFrame = (function() {
-    var last, request, vendor, _i, _len, _ref;
+require.define("/node_modules/animation/node_modules/request-animation-frame/lib/shim.js", function (require, module, exports, __dirname, __filename) {
+    (function() {
+  var _ref;
+
+  _ref = (function() {
+    var cancel, isNative, last, request, vendor, _i, _len, _ref;
     last = 0;
     request = typeof window !== "undefined" && window !== null ? window.requestAnimationFrame : void 0;
+    cancel = typeof window !== "undefined" && window !== null ? window.cancelAnimationFrame : void 0;
     _ref = ["webkit", "moz", "o", "ms"];
     for (_i = 0, _len = _ref.length; _i < _len; _i++) {
       vendor = _ref[_i];
+      if (cancel == null) {
+        cancel = (typeof window !== "undefined" && window !== null ? window["" + vendor + "cancelAnimationFrame"] : void 0) || (typeof window !== "undefined" && window !== null ? window["" + vendor + "cancelRequestAnimationFrame"] : void 0);
+      }
       if ((request != null ? request : request = typeof window !== "undefined" && window !== null ? window["" + vendor + "RequestAnimationFrame"] : void 0)) {
         break;
       }
     }
-    return request != null ? request : function(callback) {
-      var cur, time;
+    isNative = request != null;
+    request = request != null ? request : function(callback, timeout) {
+      var cur, id, time;
+      if (timeout == null) timeout = 16;
       cur = new Date().getTime();
-      time = Math.max(0, 16 - cur + last);
-      return setTimeout(callback, time);
+      time = Math.max(0, timeout + last - cur);
+      id = setTimeout(function() {
+        return typeof callback === "function" ? callback(cur + time) : void 0;
+      }, time);
+      last = cur + time;
+      return id;
     };
-  })();
+    request.isNative = isNative;
+    isNative = cancel != null;
+    cancel = cancel != null ? cancel : function(id) {
+      return clearTimeout(id);
+    };
+    cancel.isNative = isNative;
+    return [request, cancel];
+  })(), this.requestAnimationFrame = _ref[0], this.cancelAnimationFrame = _ref[1];
+
+}).call(this);
+
+});
+
+require.define("/node_modules/animation/node_modules/ms/package.json", function (require, module, exports, __dirname, __filename) {
+    module.exports = {"name":"ms","version":"0.1.0","description":"Tiny ms conversion utility","main":"./ms","devDependencies":{"mocha":"*","expect.js":"*","serve":"*"}}
+});
+
+require.define("/node_modules/animation/node_modules/ms/ms.js", function (require, module, exports, __dirname, __filename) {
+    /**
+
+# ms.js
+
+No more painful `setTimeout(fn, 60 * 4 * 3 * 2 * 1 * Infinity * NaN * '☃')`.
+
+    ms('2d')      // 172800000
+    ms('1.5h')    // 5400000
+    ms('1h')      // 3600000
+    ms('1m')      // 60000
+    ms('5s')      // 5000
+    ms('500ms')    // 500
+    ms('100')     // '100'
+    ms(100)       // 100
+
+**/
+
+(function (g) {
+  var r = /(\d*.?\d+)([mshd]+)/
+    , _ = {}
+
+  _.ms = 1;
+  _.s = 1000;
+  _.m = _.s * 60;
+  _.h = _.m * 60;
+  _.d = _.h * 24;
+
+  function ms (s) {
+    if (s == Number(s)) return Number(s);
+    r.exec(s.toLowerCase());
+    return RegExp.$1 * _[RegExp.$2];
+  }
+
+  g.top ? g.ms = ms : module.exports = ms;
+})(this);
 
 });
 ;require('./dt-jquery');}).call(this);

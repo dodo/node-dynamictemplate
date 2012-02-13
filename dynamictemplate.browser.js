@@ -1238,31 +1238,6 @@ require.define("/template.js", function (require, module, exports, __dirname, __
 
   module.exports = Template;
 
-  /*
-  
-  fallbeispiel: (als liste)
-      tag A
-      tag B (anderes template)
-      tag C
-  
-  3 anwendungsfälle:
-  
-      1. alles auf serverseite:
-          - C muss warten bis B fertig ist
-          - kein jqueryify
-          - nur on data zum client streamen
-  
-      2. leeres layout auf server site und rest mit content auf client side:
-          - anstatt B sollte ein dummy tag kommen
-          - jqueryify auf client side und dummy tag replacen
-          - on data für leeres layout und jquery objects auf client side
-  
-      3. alles auf client side:
-          - kein on data (oder doch in jqueryify?)
-          - nur jqueryify
-          - anstatt tag B kommt dummy, der replaced wird wenn dieses template zu ende ist (also nach tag C)
-  */
-
 }).call(this);
 
 });
