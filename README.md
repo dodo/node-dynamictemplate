@@ -1,4 +1,6 @@
-# [Δt dynamictemplate](http://dodo.github.com/node-dynamictemplate/)
+# ![Δt](https://s3.amazonaws.com/cloud.ohloh.net/attachments/49947/%CE%94t_med.png)[dynamictemplate](http://dodo.github.com/node-dynamictemplate/)
+
+
 
 [dynamictemplate](http://dodo.github.com/node-dynamictemplate/) is yet
 another template engine, but this time loaded with full async support
