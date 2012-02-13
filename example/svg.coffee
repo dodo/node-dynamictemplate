@@ -14,7 +14,7 @@ svgns = "http://www.w3.org/2000/svg"
 
 tplops = schema:5
 svg = domify new Template tplops, ->
-    tplops.self_closing += " rect"
+    tplops.self_closing += " path"
     tplops.self_closing += " svg"
 
     @$div class:'controls', ->
