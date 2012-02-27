@@ -7,7 +7,7 @@
 EVENTS = [
     'new','add'
     'show', 'hide'
-    'attr','attr:remove','text', 'raw'
+    'attr','text', 'raw'
     'remove', 'replace'
     'data','close','end'
 ]
