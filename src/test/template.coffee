@@ -1,11 +1,12 @@
 path = require 'path'
 { readFile } = require 'fs'
 { Template } = require '../dynamictemplate'
+streamify = require 'dt-stream'
 
 module.exports =
 
     simple: (æ) ->
-        xml = new Template ->
+        xml = streamify new Template ->
             @$tag('test')
         xml.on 'end', æ.done
         xml.on 'data', (tag) -> æ.equal "<test/>", tag
@@ -13,7 +14,7 @@ module.exports =
 
     html5: (æ) ->
         content = ["a", "b", "c"]
-        xml = new Template schema:5, doctype:on, ->
+        xml = streamify new Template schema:5, doctype:on, ->
             @$html ->
                 @body ->
                     file = path.join(__dirname,"..","filename")
@@ -26,7 +27,7 @@ module.exports =
 
 
         xml.ready æ.done
-        xml.on 'data', (tag) -> æ.equal results.shift(), tag
+        xml.stream.on 'data', (tag) -> æ.equal results.shift(), tag
         results = [
             '<!DOCTYPE html>'
             '<html>'
@@ -50,14 +51,14 @@ module.exports =
         ]
 
     pretty: (æ) ->
-        xml = new Template schema:5, pretty:" ", doctype:on, ->
+        xml = streamify new Template schema:5, pretty:" ", doctype:on, ->
             @$html ->
                 @$head ->
                     @$title "holla"
                 @$body ->
                     @$p "hello world"
         xml.ready æ.done
-        xml.on 'data', (tag) -> æ.equal results.shift(), tag
+        xml.stream.on 'data', (tag) -> æ.equal results.shift(), tag
         results = [
             '<!DOCTYPE html>\n'
             '<html>\n'
@@ -91,12 +92,12 @@ module.exports =
                 @end()
 
 
-        xml = template data =
+        xml = streamify template data =
             title:'test'
             content:'..'
 
         xml.ready æ.done
-        xml.on 'data', (tag) -> æ.equal results.shift(), tag
+        xml.stream.on 'data', (tag) -> æ.equal results.shift(), tag
         results = [
             '<html>'
             '<head>'
