@@ -89,7 +89,7 @@ class Template extends EventEmitter
             # write doctype
             if opts.doctype and (dt = doctype[d]?(opts))
                 dt += "\n" if opts.pretty
-                @xml.emit 'data', dt
+                @xml.emit 'data', @xml, dt
             # templating process ...
             if typeof template is 'function'
                 template.call @xml
