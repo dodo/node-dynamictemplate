@@ -103,11 +103,8 @@ class Template extends EventEmitter
     end: =>
         @xml.end arguments...
 
-    ready: (callback) =>
-        if @xml.closed is yes
-            callback()
-        else
-            @xml.once('end', callback)
+    ready: =>
+        @xml.ready arguments...
 
 
 # exports
