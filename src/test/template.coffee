@@ -115,3 +115,23 @@ module.exports =
             '</html>'
         ]
 
+    'self closing': (æ) ->
+        xml = streamify new Template schema:5, pretty:" ", doctype:on, ->
+            @$html ->
+                @$body ->
+                    @$div()
+                    @$br()
+        xml.ready æ.done
+        xml.stream.on 'data', (tag) -> æ.equal results.shift(), tag
+        results = [
+            '<!DOCTYPE html>\n'
+            '<html>\n'
+            ' <body>\n'
+            '  <div>\n'
+            '  </div>\n'
+            '  <br/>\n'
+            ' </body>\n'
+            '</html>\n'
+        ]
+
+
