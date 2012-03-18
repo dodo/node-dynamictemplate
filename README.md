@@ -105,3 +105,5 @@ template = ({title, desc, path, user, max}) ->
             @$footer ->
                 @$p shoutify "bye"
 ```
+
+[![Build Status](https://secure.travis-ci.org/dodo/node-asyncxml.png)](http://travis-ci.org/dodo/node-dynamictemplate)
