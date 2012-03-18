@@ -11,8 +11,9 @@
     "test": "cake build && nodeunit test",
     "prepublish": "cake build"}
 , "dependencies": {
-    "bufferstream": ">= 0.4.10",
-    "asyncxml": ">= 0.2.2"}
+    "bufferstream": ">= 0.5.1",
+    "dt-stream": ">= 0.1.1",
+    "asyncxml": ">= 0.3.2"}
 , "devDependencies": {
     "browserify": "1.6.1",
     "scopify": ">= 0.2.1",
