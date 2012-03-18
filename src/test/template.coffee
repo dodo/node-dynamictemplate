@@ -25,9 +25,10 @@ module.exports =
                                 li = @$li({'data-content':data}, data)
                         @end()
 
-
-        xml.ready æ.done
         xml.stream.on 'data', (tag) -> æ.equal results.shift(), tag
+        xml.stream.on 'end', ->
+            æ.equal 0, results.length
+            æ.done()
         results = [
             '<!DOCTYPE html>'
             '<html>'
@@ -50,6 +51,7 @@ module.exports =
             '</html>'
         ]
 
+
     pretty: (æ) ->
         xml = streamify new Template schema:5, pretty:" ", doctype:on, ->
             @$html ->
@@ -57,8 +59,11 @@ module.exports =
                     @$title "holla"
                 @$body ->
                     @$p "hello world"
-        xml.ready æ.done
+#         xml.ready æ.done
         xml.stream.on 'data', (tag) -> æ.equal results.shift(), tag
+        xml.stream.on 'end', ->
+            æ.equal 0, results.length
+            æ.done()
         results = [
             '<!DOCTYPE html>\n'
             '<html>\n'
@@ -74,6 +79,7 @@ module.exports =
             ' </body>\n'
             '</html>\n'
         ]
+
 
     layout: (æ) ->
 
@@ -96,8 +102,10 @@ module.exports =
             title:'test'
             content:'..'
 
-        xml.ready æ.done
         xml.stream.on 'data', (tag) -> æ.equal results.shift(), tag
+        xml.stream.on 'end', ->
+            æ.equal 0, results.length
+            æ.done()
         results = [
             '<html>'
             '<head>'
@@ -115,14 +123,17 @@ module.exports =
             '</html>'
         ]
 
+
     'self closing': (æ) ->
         xml = streamify new Template schema:5, pretty:" ", doctype:on, ->
             @$html ->
                 @$body ->
                     @$div()
                     @$br()
-        xml.ready æ.done
         xml.stream.on 'data', (tag) -> æ.equal results.shift(), tag
+        xml.stream.on 'end', ->
+            æ.equal 0, results.length
+            æ.done()
         results = [
             '<!DOCTYPE html>\n'
             '<html>\n'
