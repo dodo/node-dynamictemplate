@@ -8,8 +8,13 @@ module.exports =
     simple: (æ) ->
         xml = streamify new Template ->
             @$tag('test')
-        xml.on 'end', æ.done
-        xml.on 'data', (tag) -> æ.equal "<test/>", tag
+        check = "no data"
+        xml.stream.on 'data', (tag) ->
+            æ.equal "<test/>", tag
+            check = "got data"
+        xml.stream.on 'end', ->
+            æ.equal check, "got data"
+            æ.done()
 
 
     html5: (æ) ->
