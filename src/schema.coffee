@@ -15,9 +15,9 @@ schema =
         "progress rp rt ruby samp summary time"
     'strict': -> # xhtml1
         "#{do schema.html}" # FIXME
-    'xhtml1.1': ->
-        "#{do schema.xhtml}" # FIXME
     'xhtml': ->
+        "#{do schema.html}" # FIXME
+    'xhtml1.1': ->
         "#{do schema.xhtml}" # FIXME
     'frameset': ->
         "#{do schema.xhtml}" # FIXME
@@ -42,7 +42,7 @@ self_closing =
     'html-ce': ->  "#{do self_closing.xhtml}"
     'strict'  : -> "#{do self_closing.xhtml}"
     'xhtml1.1': -> "#{do self_closing.xhtml}"
-    'xhtml'   : -> "#{do self_closing.xhtml}"
+    'xhtml'   : -> "#{do self_closing.html}"
     'frameset': -> "#{do self_closing.xhtml}"
     'transitional': -> "#{do self_closing.xhtml}"
 
