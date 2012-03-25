@@ -14,6 +14,7 @@ aliases =
     'xhtml-mobile':'mobile'
     'xhtml-frameset':'frameset'
     'xhtml-trasitional':'transitional'
+    'svg':'svg1.1'
 
 # exports
 
