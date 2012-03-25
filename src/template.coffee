@@ -52,6 +52,13 @@ class Template extends EventEmitter
         ff ExtendedBuilder::, opts.schema
         # instantiate
         @xml = new ExtendedBuilder opts
+        # override query
+        old_query = @xml.query
+        @xml.query = (type, tag, key) ->
+            if type is 'tag'
+                key.xml ? key
+            else
+                old_query.call(this, type, tag, key)
 
         # tag class is defined by builder
         Tag = @xml.Tag
