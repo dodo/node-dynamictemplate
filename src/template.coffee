@@ -100,6 +100,9 @@ class Template extends EventEmitter
             else
                 @end(template)
 
+    toString: ->
+        "[object Template]"
+
     register: =>
         @xml.register arguments...
 
