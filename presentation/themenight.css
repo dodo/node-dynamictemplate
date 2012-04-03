@@ -1,0 +1,167 @@
+
+
+body {
+    font-size: 23px;
+    font-family: Helvetica, FreeSans, Arial, san-serif;
+}
+
+h1 {
+    margin:0;
+    width: 1200px;
+}
+
+p {
+    margin:23px;
+    margin-bottom:0;
+    min-width: 1000px;
+}
+
+li {
+    list-style:none;
+}
+
+a {
+    text-decoration:none;
+    margin-right:20px;
+    font-weight: bold;
+    color:black;
+}
+
+/* impress.js stuff */
+
+.past {
+    -webkit-opacity: 0.6;
+    -moz-opacity: 0.6;
+    -o-opacity: 0.6;
+    opacity: 0.6;
+}
+
+.future {
+    -webkit-opacity: 0.1;
+    -moz-opacity: 0.1;
+    -o-opacity: 0.1;
+    opacity: 0.1;
+}
+
+.present {
+    -webkit-opacity: 1.0;
+    -moz-opacity: 1.0;
+    -o-opacity: 1.0;
+    opacity: 1.0;
+}
+
+sub, sup, small {
+    -webkit-opacity: 0.8;
+    -moz-opacity: 0.8;
+    -o-opacity: 0.8;
+    opacity: 0.8;
+}
+
+.controls {
+    margin-left: 20px;
+    -webkit-opacity: 0.0;
+    -moz-opacity: 0.0;
+    -o-opacity: 0.0;
+    opacity: 0.0;
+}
+.active .controls {
+    -webkit-opacity: 1.0;
+    -moz-opacity: 1.0;
+    -o-opacity: 1.0;
+    opacity: 1.0;
+}
+
+/* sections */
+
+#title {
+    -webkit-opacity: 1.0;
+    -moz-opacity: 1.0;
+    -o-opacity: 1.0;
+    opacity: 1.0;
+    -webkit-transition: 1s;
+    -moz-transition: 1s;
+    -o-transition: 1s;
+    transition: 1s;
+    font-weight: bold;
+    z-index: 23;
+}
+.active#title {font-size: 666px;}
+
+
+/* helper */
+
+.right {
+    padding-left:750px;
+}
+
+.left {
+    margin-left:-240px;
+}
+
+.tab {
+    -webkit-transition: 1s;
+    -moz-transition: 1s;
+    -o-transition: 1s;
+    transition: 1s;
+    -webkit-opacity: 0.0;
+    -moz-opacity: 0.0;
+    -o-opacity: 0.0;
+    opacity: 0.0;
+    position:absolute;
+    background-color:white;
+    border-radius:8px;
+    padding: 8px;
+    -webkit-transform:translate(1200px, -300px);
+    -moz-transform:translate(1200px, -300px);
+    -o-transform:translate(1200px, -300px);
+    transform:translate(1200px, -300px);
+    z-index: 7;
+    font-size:20px;
+}
+
+.fine {
+    font-size:16px;
+}
+
+.hugh.tab {
+    -webkit-transform:translate(1200px, -420px);
+    -moz-transform:translate(1200px, -420px);
+    -o-transform:translate(1200px, -420px);
+    transform:translate(1200px, -420px);
+}
+.small.tab {
+    -webkit-transform:translate(1200px, -222px);
+    -moz-transform:translate(1200px, -222px);
+    -o-transform:translate(1200px, -222px);
+    transform:translate(1200px, -222px);
+}
+
+.active .tab {
+    -webkit-transform:translate(450px, -300px);
+    -moz-transform:translate(450px, -300px);
+    -o-transform:translate(450px, -300px);
+    transform:translate(450px, -300px);
+    -webkit-opacity: 1.0;
+    -moz-opacity: 1.0;
+    -o-opacity: 1.0;
+    opacity: 1.0;
+}
+
+.active .small.tab {
+    -webkit-transform:translate(450px, -222px);
+    -moz-transform:translate(450px, -222px);
+    -o-transform:translate(450px, -222px);
+    transform:translate(450px, -222px);
+}
+
+.active .hugh.tab {
+    -webkit-transform:translate(450px, -420px);
+    -moz-transform:translate(450px, -420px);
+    -o-transform:translate(450px, -420px);
+    transform:translate(450px, -420px);
+}
+
+.canvas {
+    display:block;
+    border: 1px solid #ccc;
+}
