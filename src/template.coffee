@@ -52,6 +52,7 @@ class Template extends EventEmitter
         ff ExtendedBuilder::, opts.schema
         # instantiate
         @xml = new ExtendedBuilder opts
+        @xml.template = this
         # override query
         old_query = @xml.query
         @xml.query = (type, tag, key) ->
