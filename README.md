@@ -51,6 +51,7 @@ Just add a dollar sign (`$`) in front of the tag method and it acts a little bit
 
  * [Δt compiler](https://github.com/dodo/node-dt-compiler) - this compiles static HTML to template masks.
  * [Δt jquery adapter](https://github.com/dodo/node-dt-jquery) - this lets you insert the template into dom with the help of [jQuery](http://jquery.com/).
+ * [Δt list](https://github.com/dodo/node-dt-list) - this gives all you need to handle an ordered list of tags.
 
 ### The dynamic part
 
