@@ -318,141 +318,289 @@ exports.extname = function(path) {
 
 require.define("/dt-jquery.js", function (require, module, exports, __dirname, __filename) {
     (function() {
-  var Animation, delay, jqueryify, release;
-  var __slice = Array.prototype.slice;
+  var $fyBuilder, Animation, EVENTS, JQueryAdapter, cancelable_and_retrivable_callbacks, createSpaceholder, defaultfn, deferred_callbacks, defineJQueryAPI, isArray, jqueryify, removed, singlton_callback, _ref;
 
   Animation = require('animation').Animation;
 
-  delay = function(job) {
-    var _ref;
-    if (this._jquery != null) {
-      return job();
-    } else {
-      if ((_ref = this._jquery_delay) == null) this._jquery_delay = [];
-      return this._jquery_delay.push(job);
-    }
-  };
+  _ref = require('./util'), singlton_callback = _ref.singlton_callback, deferred_callbacks = _ref.deferred_callbacks, cancelable_and_retrivable_callbacks = _ref.cancelable_and_retrivable_callbacks, defineJQueryAPI = _ref.defineJQueryAPI, $fyBuilder = _ref.$fyBuilder, createSpaceholder = _ref.createSpaceholder, removed = _ref.removed;
 
-  release = function() {
-    var job, _i, _len, _ref;
-    if (this._jquery_delay != null) {
-      _ref = this._jquery_delay;
-      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-        job = _ref[_i];
-        job();
+  defaultfn = require('./fn');
+
+  isArray = Array.isArray;
+
+  EVENTS = ['add', 'end', 'show', 'hide', 'attr', 'text', 'raw', 'remove', 'replace'];
+
+  JQueryAdapter = (function() {
+
+    function JQueryAdapter(template, opts) {
+      var f, n, plugin, _base, _i, _len, _ref10, _ref11, _ref12, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+      this.template = template;
+      if (opts == null) opts = {};
+      this.builder = (_ref2 = this.template.xml) != null ? _ref2 : this.template;
+      if ((_ref3 = opts.timeoutexecution) == null) opts.timeoutexecution = '32ms';
+      if ((_ref4 = opts.execution) == null) opts.execution = '8ms';
+      if ((_ref5 = opts.timeout) == null) opts.timeout = '120ms';
+      if ((_ref6 = opts.toggle) == null) opts.toggle = true;
+      if ((_ref7 = this.$) == null) {
+        this.$ = (_ref8 = (_ref9 = opts.jquery) != null ? _ref9 : opts.$) != null ? _ref8 : typeof window !== "undefined" && window !== null ? window.$ : void 0;
       }
-      return delete this._jquery_delay;
+      this.animation = new Animation(opts);
+      this.animation.start();
+      this.fn = {};
+      for (n in defaultfn) {
+        f = defaultfn[n];
+        if ((_ref10 = (_base = this.fn)[n]) == null) _base[n] = f.bind(this);
+      }
+      this.initialize();
+      if ((_ref11 = opts.use) == null) opts.use = [];
+      if (!isArray(opts.use)) opts.use = [opts.use];
+      _ref12 = opts.use;
+      for (_i = 0, _len = _ref12.length; _i < _len; _i++) {
+        plugin = _ref12[_i];
+        this.use(plugin);
+      }
     }
-  };
 
-  jqueryify = function(tpl) {
-    var animation, nextAnimationFrame, old_query;
-    animation = new Animation({
-      execution: '5ms',
-      timeout: '120ms',
-      toggle: true
-    });
-    nextAnimationFrame = function(callback) {
-      return animation.push(callback);
-    };
-    animation.start();
-    tpl.on('add', function(parent, el) {
-      return delay.call(parent, function() {
-        if (parent === tpl.xml) {
-          return parent._jquery = parent._jquery.add(el._jquery);
-        } else {
-          return nextAnimationFrame(function() {
-            return parent._jquery.append(el._jquery);
-          });
+    JQueryAdapter.prototype.initialize = function() {
+      var old_query;
+      this.listen();
+      this.builder._jquery = this.$([]);
+      this.builder._jquery_done = deferred_callbacks();
+      this.builder._jquery_done.callback()();
+      old_query = this.builder.query;
+      this.builder.query = function(type, tag, key) {
+        var attr, attrs, domel, _i, _len, _ref2;
+        if (tag._jquery == null) return old_query.call(this, type, tag, key);
+        if (type === 'attr') {
+          return tag._jquery.attr(key);
+        } else if (type === 'text') {
+          return tag._jquery.text();
+        } else if (type === 'tag') {
+          if (key._jquery != null) {
+            return key;
+          } else {
+            if ((domel = key[0]) != null) {
+              attrs = {};
+              _ref2 = domel.attributes;
+              for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+                attr = _ref2[_i];
+                attrs[attr.name] = attr.value;
+              }
+              return new this.builder.Tag(domel.nodeName.toLowerCase(), attrs, function() {
+                this._jquery = key;
+                return this.end();
+              });
+            } else {
+              return old_query.call(this, type, tag, key);
+            }
+          }
         }
-      });
-    });
-    tpl.on('close', function(el) {
-      var _ref;
-      if ((_ref = el._jquery) == null) el._jquery = $(el.toString());
-      release.call(el);
-      return el.on('newListener', function(type) {
-        var _ref2, _ref3;
-        if ((_ref2 = el._events) != null ? (_ref3 = _ref2[type]) != null ? _ref3.length : void 0 : void 0) {
-          return;
-        }
-        return el._jquery.bind(type, function() {
-          el.emit.apply(el, [type, this].concat(__slice.call(arguments)));
-        });
-      });
-    });
-    tpl.on('text', function(el, text) {
-      return delay.call(el, function() {
-        return el._jquery.text(text);
-      });
-    });
-    tpl.on('raw', function(el, html) {
-      return delay.call(el, function() {
-        return nextAnimationFrame(function() {
-          return el._jquery.html(html);
-        });
-      });
-    });
-    tpl.on('show', function(el) {
-      return delay.call(el, function() {
-        return el._jquery.show();
-      });
-    });
-    tpl.on('hide', function(el) {
-      return delay.call(el, function() {
-        return el._jquery.hide();
-      });
-    });
-    tpl.on('attr', function(el, key, value) {
-      return delay.call(el, function() {
-        return el._jquery.attr(key, value);
-      });
-    });
-    tpl.on('attr:remove', function(el, key) {
-      return delay.call(el, function() {
-        return el._jquery.removeAttr(key);
-      });
-    });
-    tpl.on('replace', function(el, tag) {
-      return delay.call(el, function() {
-        return nextAnimationFrame(function() {
-          var _jquery, _ref;
-          _jquery = (_ref = tag._jquery) != null ? _ref : tag;
-          if (!((_jquery != null ? _jquery.length : void 0) > 0)) return;
-          el._jquery.replaceWith(_jquery);
-          el._jquery = _jquery;
-          if (el === tpl.xml) return el.jquery = _jquery;
-        });
-      });
-    });
-    tpl.on('remove', function(el) {
-      var _ref;
-      return (_ref = el._jquery) != null ? _ref.remove() : void 0;
-    });
-    tpl.on('end', function() {
-      tpl.xml._jquery = $();
-      release.call(tpl.xml);
-      return tpl.jquery = tpl.xml._jquery;
-    });
-    old_query = tpl.xml.query;
-    tpl.xml.query = function(type, tag, key) {
-      if (tag._jquery == null) return old_query.call(this, type, tag, key);
-      if (type === 'attr') {
-        return tag._jquery.attr(key);
-      } else if (type === 'text') {
-        return tag._jquery.text();
-      } else if (type === 'tag') {
-        if (key._jquery != null) {
-          return key;
+      };
+      return this.template.register('ready', function(tag, next) {
+        if (tag._jquery_ready === true) {
+          return next(tag);
         } else {
-          return {
-            _jquery: key
+          return tag._jquery_ready = function() {
+            return next(tag);
           };
         }
+      });
+    };
+
+    JQueryAdapter.prototype.use = function(plugin) {
+      if (plugin != null) plugin.call(this, this);
+      return this;
+    };
+
+    JQueryAdapter.prototype.listen = function() {
+      var _this = this;
+      return EVENTS.forEach(function(event) {
+        return _this.template.on(event, _this["on" + event].bind(_this));
+      });
+    };
+
+    JQueryAdapter.prototype.onadd = function(parent, el) {
+      var ecb, pcb, that, _base, _base2, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+      if (removed(el)) return;
+      if (el === el.builder) {
+        if ((_ref2 = el._jquery) == null) {
+          el._jquery = this.$([], (_ref3 = el.parent) != null ? _ref3._jquery : void 0);
+        }
+        $fyBuilder(el);
+      } else {
+        if ((_ref4 = el._jquery) == null) {
+          el._jquery = this.$(el.toString(), el.parent._jquery);
+        }
+        defineJQueryAPI(el);
+      }
+      that = this;
+      if ((_ref5 = el._jquery_manip) == null) {
+        el._jquery_manip = cancelable_and_retrivable_callbacks();
+      }
+      if ((_ref6 = el._jquery_done) == null) {
+        el._jquery_done = deferred_callbacks();
+      }
+      if ((_ref7 = parent._jquery_done) == null) {
+        parent._jquery_done = deferred_callbacks();
+      }
+      ecb = el._jquery_done.callback();
+      pcb = parent._jquery_done.callback();
+      if (el === el.builder) {
+        ecb();
+      } else {
+        el.ready(ecb);
+      }
+      if (parent === parent.builder) {
+        pcb();
+      } else {
+        parent.ready(pcb);
+      }
+      if ((_ref8 = el._jquery_insert) == null) {
+        el._jquery_insert = singlton_callback(el, function() {
+          if (this._jquery.length === 0) {
+            createSpaceholder.call(that, this, this.parent._jquery);
+          }
+          that.fn.add(this.parent, this);
+          if (this.parent._jquery_wrapped) {
+            this.parent._jquery_wrapped = false;
+            this.parent._jquery = this.parent._jquery.not(':first');
+          }
+          if (this.parent === this.parent.builder) $fyBuilder(this.parent);
+          if (typeof this._jquery_ready === "function") this._jquery_ready();
+          this._jquery_ready = true;
+          return this._jquery_insert = true;
+        });
+      }
+      if (typeof (_base = el._jquery_insert).replace === "function") {
+        _base.replace(el);
+      }
+      if ((_ref9 = el._jquery_parent_done) == null) {
+        el._jquery_parent_done = singlton_callback(el, function() {
+          var bool, _ref10, _ref11;
+          if (removed(this)) return;
+          if (this.parent === this.parent.builder) {
+            bool = !(this.parent.parent != null) || (this.parent.parent === ((_ref10 = this.parent.parent) != null ? _ref10.builder : void 0) && ((_ref11 = this.parent.parent) != null ? _ref11._jquery_done : void 0) === true);
+            if (bool && this.parent._jquery_insert === true) {
+              return that.animation.push(this._jquery_insert);
+            } else {
+              return typeof this._jquery_insert === "function" ? this._jquery_insert() : void 0;
+            }
+          } else {
+            return that.animation.push(this._jquery_insert);
+          }
+        });
+      }
+      if (typeof (_base2 = el._jquery_parent_done).replace === "function") {
+        _base2.replace(el);
+      }
+      return parent._jquery_done(el._jquery_parent_done);
+    };
+
+    JQueryAdapter.prototype.onreplace = function(oldtag, newtag) {
+      var cb, oldreplacerequest, that, _base, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7;
+      if (removed(oldtag) || removed(newtag)) return;
+      if ((_ref2 = newtag._jquery_parent_done) == null) {
+        newtag._jquery_parent_done = oldtag._jquery_parent_done;
+      }
+      if ((_ref3 = newtag._jquery_insert) == null) {
+        newtag._jquery_insert = oldtag._jquery_insert;
+      }
+      if ((_ref4 = newtag._jquery_done) == null) {
+        newtag._jquery_done = oldtag._jquery_done;
+      }
+      oldtag._jquery_parent_done = null;
+      oldtag._jquery_insert = null;
+      oldtag._jquery_done = null;
+      this.onadd(oldtag.parent, newtag);
+      if ((_ref5 = oldtag._jquery_manip) != null) {
+        if (typeof _ref5.cancel === "function") _ref5.cancel();
+      }
+      newtag._jquery_manip.reset();
+      while ((cb = newtag._jquery_manip.callbacks.shift()) != null) {
+        this.animation.push(cb);
+      }
+      if (newtag._jquery_insert === true) {
+        that = this;
+        if ((_ref6 = newtag._jquery_replace) == null) {
+          newtag._jquery_replace = oldtag._jquery_replace;
+        }
+        oldreplacerequest = newtag._jquery_replace != null;
+        if ((_ref7 = newtag._jquery_replace) == null) {
+          newtag._jquery_replace = singlton_callback(newtag, function() {
+            if (this._jquery.length === 0) {
+              createSpaceholder.call(that, this, this.parent._jquery);
+            }
+            that.fn.replace(oldtag, this);
+            if (this === this.builder) return $fyBuilder(this);
+          });
+        }
+        if (typeof (_base = newtag._jquery_replace).replace === "function") {
+          _base.replace(newtag);
+        }
+        oldtag._jquery_replace = null;
+        if (!oldreplacerequest) return this.animation.push(newtag._jquery_replace);
       }
     };
+
+    JQueryAdapter.prototype.ontext = function(el, text) {
+      var _this = this;
+      return this.animation.push(el._jquery_manip(function() {
+        return _this.fn.text(el, text);
+      }));
+    };
+
+    JQueryAdapter.prototype.onraw = function(el, html) {
+      var _this = this;
+      return this.animation.push(el._jquery_manip(function() {
+        return _this.fn.raw(el, html);
+      }));
+    };
+
+    JQueryAdapter.prototype.onattr = function(el, key, value) {
+      var _this = this;
+      return this.animation.push(el._jquery_manip(function() {
+        return _this.fn.attr(el, key, value);
+      }));
+    };
+
+    JQueryAdapter.prototype.onshow = function(el) {
+      return this.fn.show(el);
+    };
+
+    JQueryAdapter.prototype.onhide = function(el) {
+      return this.fn.hide(el);
+    };
+
+    JQueryAdapter.prototype.onremove = function(el) {
+      var _ref2;
+      if (el._jquery == null) return;
+      this.fn.remove(el);
+      el._jquery_done.reset();
+      if ((_ref2 = el._jquery_manip) != null) _ref2.cancel();
+      delete el._jquery_manip;
+      delete el._jquery_done;
+      return delete el._jquery;
+    };
+
+    JQueryAdapter.prototype.onend = function() {
+      this.template.jquery = this.template._jquery = this.builder._jquery;
+      return defineJQueryAPI(this.template);
+    };
+
+    return JQueryAdapter;
+
+  })();
+
+  jqueryify = function(opts, tpl) {
+    var _ref2;
+    if (tpl == null) _ref2 = [opts, null], tpl = _ref2[0], opts = _ref2[1];
+    new JQueryAdapter(tpl, opts);
     return tpl;
   };
+
+  jqueryify.fn = defaultfn;
+
+  jqueryify.Adapter = JQueryAdapter;
 
   module.exports = jqueryify;
 
@@ -473,7 +621,7 @@ require.define("/dt-jquery.js", function (require, module, exports, __dirname, _
 });
 
 require.define("/node_modules/animation/package.json", function (require, module, exports, __dirname, __filename) {
-    module.exports = {"name":"animation","description":"animation frame interval","version":"0.0.1","homepage":"https://github.com/dodo/node-animation","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/node-animation.git"},"main":"animation.js","engines":{"node":">= 0.4.x"},"keywords":["request","animation","frame","interval","node","browser"],"scripts":{"prepublish":"cake build"},"dependencies":{"ms":">= 0.1.0","request-animation-frame":">= 0.0.1"},"devDependencies":{"muffin":">= 0.2.6","coffee-script":">= 1.1.2"}}
+    module.exports = {"name":"animation","description":"animation timing & handling","version":"0.1.1","homepage":"https://github.com/dodo/node-animation","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/node-animation.git"},"main":"animation.js","engines":{"node":">= 0.4.x"},"keywords":["request","animation","frame","interval","node","browser"],"scripts":{"prepublish":"cake build"},"dependencies":{"ms":">= 0.1.0","request-animation-frame":">= 0.1.0"},"devDependencies":{"muffin":">= 0.2.6","coffee-script":">= 1.1.2"}}
 });
 
 require.define("/node_modules/animation/animation.js", function (require, module, exports, __dirname, __filename) {
@@ -484,7 +632,7 @@ module.exports = require('./lib/animation')
 
 require.define("/node_modules/animation/lib/animation.js", function (require, module, exports, __dirname, __filename) {
     (function() {
-  var EventEmitter, cancelAnimationFrame, ms, now, requestAnimationFrame, _ref;
+  var EventEmitter, cancelAnimationFrame, ms, now, requestAnimationFrame, _ref, _ref2;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
   EventEmitter = require('events').EventEmitter;
@@ -493,34 +641,23 @@ require.define("/node_modules/animation/lib/animation.js", function (require, mo
 
   ms = require('ms');
 
-  now = function() {
+  now = (_ref2 = Date.now) != null ? _ref2 : function() {
     return new Date().getTime();
   };
-
-  requestAnimationFrame = (function() {
-    var orig;
-    orig = requestAnimationFrame;
-    return function(callback, timeout) {
-      if (orig.isNative) {
-        return orig(callback);
-      } else {
-        return orig(callback, timeout);
-      }
-    };
-  })();
 
   this.Animation = (function() {
 
     __extends(Animation, EventEmitter);
 
     function Animation(opts) {
-      var _ref2, _ref3;
+      var _ref3, _ref4, _ref5;
       if (opts == null) opts = {};
       this.nextTick = __bind(this.nextTick, this);
-      this.executiontime = ms((_ref2 = opts.execution) != null ? _ref2 : 5);
+      this.timoutexecutiontime = ms((_ref3 = opts.timeoutexecution) != null ? _ref3 : '32ms');
+      this.executiontime = ms((_ref4 = opts.execution) != null ? _ref4 : '8ms');
       this.timeouttime = opts.timeout;
       if (this.timeouttime != null) this.timeouttime = ms(this.timeouttime);
-      this.autotoggle = (_ref3 = opts.toggle) != null ? _ref3 : false;
+      this.autotoggle = (_ref5 = opts.toggle) != null ? _ref5 : false;
       this.frametime = opts.frame;
       if (this.frametime != null) this.frametime = ms(this.frametime);
       this.queue = [];
@@ -529,12 +666,16 @@ require.define("/node_modules/animation/lib/animation.js", function (require, mo
       Animation.__super__.constructor.apply(this, arguments);
     }
 
-    Animation.prototype.work_queue = function(started, dt) {
+    Animation.prototype.need_next_tick = function() {
+      return this.running && !this.paused && (this.queue.length || !this.autotoggle);
+    };
+
+    Animation.prototype.work_queue = function(started, dt, executiontime) {
       var t, _base, _results;
       t = now();
       _results = [];
-      while (this.queue.length && t - started < this.executiontime) {
-        if (typeof (_base = this.queue.shift()) === "function") _base();
+      while (this.queue.length && t - started < executiontime) {
+        if (typeof (_base = this.queue.shift()) === "function") _base(dt);
         _results.push(t = now());
       }
       return _results;
@@ -546,14 +687,17 @@ require.define("/node_modules/animation/lib/animation.js", function (require, mo
     };
 
     Animation.prototype.nextTick = function(callback) {
-      var frame, request, t, tick, timeout, _ref2;
-      var _this = this;
-      _ref2 = [null, null], timeout = _ref2[0], request = _ref2[1];
+      var request, t, tick, timeout, _ref3;
+      _ref3 = [null, null], timeout = _ref3[0], request = _ref3[1];
       t = now();
       tick = function(success) {
-        var dt, started;
+        var dt, executiontime, nextid, started;
+        if (requestAnimationFrame.isNative) {
+          if (this.need_next_tick()) nextid = this.nextTick();
+        }
         started = now();
         dt = started - t;
+        executiontime = success ? this.executiontime : this.timoutexecutiontime;
         if (success) {
           clearTimeout(timeout);
         } else {
@@ -561,50 +705,33 @@ require.define("/node_modules/animation/lib/animation.js", function (require, mo
         }
         this.emit('tick', dt);
         if (typeof callback === "function") callback(dt);
-        this.work_queue(started, dt);
-        if (this.running && !this.paused) {
-          if (this.queue.length) {
-            return this.nextTick();
-          } else {
-            if (this.autotoggle) {
-              return this.pause();
-            } else {
-              return this.nextTick();
-            }
-          }
+        this.work_queue(started, dt, executiontime);
+        if (nextid == null) {
+          if (this.need_next_tick()) nextid = this.nextTick();
+          return;
+        }
+        if (!this.need_next_tick()) {
+          if (this.timeouttime != null) clearTimeout(nextid.timeout);
+          cancelAnimationFrame(nextid);
+          this.pause();
         }
       };
-      frame = function() {
-        var dt, started;
-        if (_this.frametime == null) tick.call(_this, true);
-        started = now();
-        dt = started - t;
-        if (dt < _this.frametime * 0.8) {
-          return request = requestAnimationFrame(frame, _this.frametime);
-        } else {
-          return tick.call(_this, true);
-        }
-      };
-      request = requestAnimationFrame(frame, this.frametime);
-      if (this.timeoutime != null) {
-        return timeout = setTimeout(tick.bind(this, false), this.timeouttime);
+      request = requestAnimationFrame(tick.bind(this, true), this.frametime);
+      if (this.timeouttime != null) {
+        timeout = setTimeout(tick.bind(this, false), this.timeouttime);
+        request.timeout = timeout;
       }
+      return request;
     };
 
     Animation.prototype.start = function() {
       if (this.running) return;
       this.running = true;
       this.emit('start');
-      if (!this.paused) {
-        if (this.autotoggle) {
-          if (this.queue.length) {
-            return this.nextTick();
-          } else {
-            return this.pause();
-          }
-        } else {
-          return this.nextTick();
-        }
+      if (!this.paused && this.autotoggle && !this.queue.length) {
+        return this.pause();
+      } else {
+        return this.nextTick();
       }
     };
 
@@ -906,6 +1033,194 @@ No more painful `setTimeout(fn, 60 * 4 * 3 * 2 * 1 * Infinity * NaN * '☃')`.
 
   g.top ? g.ms = ms : module.exports = ms;
 })(this);
+
+});
+
+require.define("/util.js", function (require, module, exports, __dirname, __filename) {
+    (function() {
+  var $fyBuilder, cancelable_and_retrivable_callbacks, createSpaceholder, deferred_callbacks, defineJQueryAPI, removed, singlton_callback;
+
+  singlton_callback = function(that, callback) {
+    var req;
+    req = function() {
+      return callback != null ? callback.apply(that, arguments) : void 0;
+    };
+    req.replace = function(replacement) {
+      return that = replacement;
+    };
+    return req;
+  };
+
+  deferred_callbacks = function() {
+    var allowed, callbacks, done, res;
+    done = false;
+    callbacks = [];
+    res = function(cb) {
+      if (done) return typeof cb === "function" ? cb() : void 0;
+      return callbacks.push(cb);
+    };
+    allowed = null;
+    res.callback = function() {
+      var callback;
+      if (done) return (function() {});
+      callback = function() {
+        var cb;
+        if (callback === allowed) {
+          while ((cb = callbacks.shift()) != null) {
+            if (typeof cb === "function") cb.apply(null, arguments);
+          }
+          callbacks = null;
+          allowed = null;
+          return done = true;
+        }
+      };
+      allowed = callback;
+      return callback;
+    };
+    res.reset = function() {
+      allowed = null;
+      callbacks = [];
+      return done = false;
+    };
+    return res;
+  };
+
+  cancelable_and_retrivable_callbacks = function() {
+    var canceled, res;
+    canceled = false;
+    res = function(cb) {
+      return function() {
+        if (canceled) {
+          return res.callbacks.push(cb);
+        } else {
+          return typeof cb === "function" ? cb.apply(null, arguments) : void 0;
+        }
+      };
+    };
+    res.cancel = function() {
+      return canceled = true;
+    };
+    res.reset = function() {
+      return canceled = false;
+    };
+    res.callbacks = [];
+    return res;
+  };
+
+  defineJQueryAPI = function(el) {
+    el.__defineGetter__('selector', function() {
+      return el._jquery.selector;
+    });
+    return el.__defineGetter__('context', function() {
+      return el._jquery.context;
+    });
+  };
+
+  $fyBuilder = function(builder) {
+    var $builder;
+    $builder = builder._jquery;
+    builder.jquery = $builder;
+    builder.template.jquery = $builder;
+    builder.template._jquery = $builder;
+    defineJQueryAPI(builder.template);
+    return defineJQueryAPI(builder);
+  };
+
+  createSpaceholder = function(el, $par) {
+    el._jquery = this.$('<spaceholder>', $par);
+    el._jquery_wrapped = true;
+    if (el === el.builder) {
+      return $fyBuilder(el);
+    } else {
+      return defineJQueryAPI(el);
+    }
+  };
+
+  removed = function(el) {
+    return el.closed === "removed";
+  };
+
+  module.exports = {
+    singlton_callback: singlton_callback,
+    deferred_callbacks: deferred_callbacks,
+    cancelable_and_retrivable_callbacks: cancelable_and_retrivable_callbacks,
+    createSpaceholder: createSpaceholder,
+    defineJQueryAPI: defineJQueryAPI,
+    $fyBuilder: $fyBuilder,
+    removed: removed
+  };
+
+}).call(this);
+
+});
+
+require.define("/fn.js", function (require, module, exports, __dirname, __filename) {
+    (function() {
+  var __slice = Array.prototype.slice;
+
+  module.exports = {
+    add: function(parent, el) {
+      var $el, $par, $parpar, i, _ref, _ref2;
+      $el = el._jquery;
+      $par = parent._jquery;
+      if (parent === parent.builder) {
+        i = $par.length - 1;
+        $par = $par.add($el);
+        if (parent._jquery_wrapped) {
+          $par.first().replaceWith($el);
+          if (parent.parent === ((_ref = parent.parent) != null ? _ref.builder : void 0)) {
+            $parpar = (_ref2 = parent.parent) != null ? _ref2._jquery : void 0;
+            parent._jquery_wrapped = false;
+            $par = $par.not(':first');
+            if ($parpar != null) {
+              $parpar.splice.apply($parpar, [$parpar.index($par), i + 1].concat(__slice.call($par)));
+            }
+          }
+        } else if ($par.parent().length > 0) {
+          $el.insertAfter($par[i]);
+        }
+      } else {
+        $par.append($el);
+      }
+      return parent._jquery = $par;
+    },
+    replace: function(oldtag, newtag) {
+      var $new, $old, $par, parent;
+      parent = newtag.parent;
+      $new = newtag._jquery;
+      $old = oldtag._jquery;
+      $par = parent._jquery;
+      if (parent === parent.builder) {
+        $par.splice.apply($par, [$par.index($old), $old.length].concat(__slice.call($new)));
+      }
+      if ($old.parent().length > 0) $old.replaceWith($new);
+      return newtag._jquery = $new;
+    },
+    text: function(el, text) {
+      return el._jquery.text(text);
+    },
+    raw: function(el, html) {
+      return el._jquery.html(html);
+    },
+    attr: function(el, key, value) {
+      if (value === void 0) {
+        return el._jquery.removeAttr(key);
+      } else {
+        return el._jquery.attr(key, value);
+      }
+    },
+    show: function(el) {
+      return el._jquery.show();
+    },
+    hide: function(el) {
+      return el._jquery.hide();
+    },
+    remove: function(el) {
+      return el._jquery.remove();
+    }
+  };
+
+}).call(this);
 
 });
 ;require('./dt-jquery');}).call(this);
