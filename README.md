@@ -6,9 +6,9 @@
 another template engine, but this time loaded with full async support
 and capable of being changed even after the template was rendered.
 
-It works in browsers too (requires JQuery).
+It works in browsers too.
 
-→ [Check out the demo!](http://dodo.github.com/node-dynamictemplate/example/list.html)
+→ [Check out the demo!](http://dodo.github.com/node-dynamictemplate/example/circles.html)
 
 ## Installation
 
