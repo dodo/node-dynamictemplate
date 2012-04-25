@@ -151,3 +151,19 @@ module.exports =
         ]
 
 
+    'replace': (æ) ->
+        replace = null
+        xml = new Template schema:5, ->
+            @$html ->
+                @$body ->
+                    replace = @$span().replace
+        xml.on 'add', (par, tag) -> console.log tag.toString(), "(#{par})"
+
+        setTimeout ->
+            replace new Template schema:5, ->
+                @$div ->
+                    @$p "foo"
+                    @$p "bar"
+#                 @ready æ.done
+        , 5
+        setTimeout æ.done, 20
