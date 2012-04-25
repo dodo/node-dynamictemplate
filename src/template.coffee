@@ -113,6 +113,12 @@ class Template extends EventEmitter
     ready: =>
         @xml.ready arguments...
 
+    show: =>
+        @xml.show arguments...
+
+    hide: =>
+        @xml.hide arguments...
+
 
 # exports
 
