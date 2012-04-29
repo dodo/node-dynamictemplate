@@ -107,6 +107,9 @@ class Template extends EventEmitter
     register: =>
         @xml.register arguments...
 
+    remove: =>
+        @xml.remove arguments...
+
     end: =>
         @xml.end arguments...
 
