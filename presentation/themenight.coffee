@@ -354,11 +354,27 @@ new Template schema:'html5', ->
                             , 20
     ctx.z -= 50; @step ctx, ->
         @$p " "
-        @$div class:'coffeescript tab', ->
+        @$div class:'hugh fine coffeescript tab', ->
             @$pre -> @$code class:'coffeescript', '''
 { random, floor, min } = Math
 svgns = "http://www.w3.org/2000/svg"
 [w, h] = [400, 400]
+
+createCircle = (tag, o) ->
+    tag.$circle {
+        xmlns:svgns
+        fill:"none"
+        stroke:"rgba(#{o.r},#{o.g},#{o.b},#{o.a})"
+        style:"stroke-width:#{o.size}"
+        cx:"#{o.x}"
+        cy:"#{o.y}"
+        r:"#{o.radius}"
+    }, tick = ->
+        setTimeout =>
+            @attr 'r', "#{o.radius+=o['+']}"
+            if --o.life then tick.call(this) else @remove()
+        ,60
+
 domify new Template schema:'svg', ->
     @$svg {
         xmlns:svgns
@@ -544,8 +560,6 @@ presentation.ready ->
             $(this).attr value:"■"
             console.log "animation resumed."
             running = yes
-
-# FIXME the start stop animation button is unreachable
 
 window.mytoggle = ->
     $('#start').click()
