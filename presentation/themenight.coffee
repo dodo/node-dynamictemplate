@@ -452,7 +452,6 @@ module.exports = design (view) ->
         @$div class:'hugh left html coffeescript tab', ->
             @$pre -> @$code class:'fine coffeescript', '''
 BufferStream = require 'bufferstream'
-Stream = require 'stream'
 streamify = require 'dt-stream'
 ##
 # useful for rendering a template directly into a response:
