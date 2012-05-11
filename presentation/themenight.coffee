@@ -142,7 +142,7 @@ function AppViewModel() {
 ko.applyBindings(new AppViewModel());''' # http://learn.knockoutjs.com/#/?tutorial=intro
 
 
-    ctx = id:'problem', class:'slide', x:-222, y:900, z:ctx.z-500, rotate:-90, rotateY:90
+    ctx = id:'problem', class:'slide', x:-222, y:900, z:ctx.z-600, rotate:-90, rotateY:90
     @step ctx, -> @$h1 "problem ?"
     problem_z = ctx.z
     delete ctx.id
