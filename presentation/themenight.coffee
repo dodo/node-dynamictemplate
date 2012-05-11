@@ -323,9 +323,10 @@ var WindowManager = (function() {
             @$pre -> @$code class:'coffeescript', '''
 new Template schema:'html5', ->
     @$html ->
-        body = @body
-        file = createReadStream(filename)
-        file.pipe(body)'''
+        @$head ->
+            @title filename
+        @$body ->
+            fs.createReadStream(filename).pipe @pre()'''
 
     ctx.z -= 50; @step ctx, ->
         @$p ->
