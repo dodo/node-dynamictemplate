@@ -201,7 +201,8 @@ ko.applyBindings(new AppViewModel());''' # http://learn.knockoutjs.com/#/?tutori
 
     ctx.z -= 50; @step ctx, ->
         @$p "DSL (Domain Specific Language)"
-        @$div class:'small haml tab', ->
+        @$div class:'small haml mustache tab', ->
+            @$p "haml"
             @$pre -> @$code class:'haml', '''
 %p
   Date/Time:
@@ -209,6 +210,10 @@ ko.applyBindings(new AppViewModel());''' # http://learn.knockoutjs.com/#/?tutori
   %strong= now
   - if now > DateTime.parse(data.apocalyse.date)
     = "Hail Cthulhu"''' # http://haml-lang.com/docs/yardoc/
+            @$p "mustache"
+            @$pre -> @$code class:'mustache', '''
+{{#repos}}<b>{{name}}</b>{{/repos}}
+{{^repos}}No repos :({{/repos}}''' # https://github.com/janl/mustache.js/#inverted-sections
 
     ctx.z -= 20;
     ctx.z -= 50; @step ctx, ->
