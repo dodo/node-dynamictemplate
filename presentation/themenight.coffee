@@ -486,7 +486,20 @@ output = render new Template schema:5, doctype:on, ->
   </body>
 </html>'''
 
-    ctx.z -= 50; @step ctx, -> @$p "it's coffeescript"
+    ctx.z -= 50; @step ctx, ->
+        @$p "it's coffeescript"
+        @$p class:'small left javascript tab', ->
+            @$pre -> @$code class:'fine javascript', '''
+var tree = [{name:'div',
+             attr:{class:'block'},
+             children:[]}];
+function traverse(tag, el) {
+    if (typeof(el) === 'string')
+        return tag.text(el);
+    return tag.$tag(el.name, el.attr, function () {
+        el.children.forEach(traverse.bind(0, this));
+    });
+}'''
     ctx.z -= 20;
     ctx.z -= 50; @step ctx, ->
         @$p "browser support"
