@@ -1,5 +1,4 @@
 BufferStream = require 'bufferstream'
-Stream = require 'stream'
 streamify = require 'dt-stream'
 
 
@@ -8,7 +7,7 @@ streamify = require 'dt-stream'
 #   render(new Template(schema:'html5', body).pipe(res))
 render = (template) ->
     buffer = new BufferStream
-        encoding:'utf-8'
+        encoding:'utf-8' # FIXME use template.options.encoding
         size:'flexible'
         disabled:yes
     streamify(template).stream.pipe(buffer)
