@@ -1,0 +1,31 @@
+/* depends on base.css */
+
+.list {
+    clear:both;
+    list-style-type: none;
+    border:1px dashed gray;
+    border-bottom:0px;
+    padding:0;
+}
+.list li {
+    list-style-type: none;
+    border-bottom:1px dashed gray;
+    padding:2px;
+    padding-left:20px;
+    margin:0;
+    min-height: 2em;
+}
+
+.control {
+    text-align:center;
+    border-radius:1.1em;
+    min-height: 1.3em;
+    min-width: 1.3em;
+    font-size:1.1em;
+    float:right;
+    padding:0;
+}
+
+input[type="number"]  {
+    width: 3em;
+}
