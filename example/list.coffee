@@ -9,19 +9,28 @@ jqueryify = (opts, tpl) ->
 
 # the templates
 
-button = (tag, id, value) ->
-    tag.$input class:'button', type:'button', id:id, value:value
+input = (tag, type, id, value, opts) ->
+    tag.$input(_.extend({class:type, name:id, type, id, value}, opts))
 
 items = null # all our list entries
 tplapi = new EventEmitter # every other event system should be suitable as well
 list = jqueryify new Template schema:5, ->
     @$div class:'controls', ->
-        button this, "add",    "add random entry"
-        button this, "remove", "remove random entry"
 
-        @$input class:'number', type:'number', id:'nmb', value:"0"
-        @$input class:'text', type:'input', id:'text', placeholder:"try me!"
-        button this, "insert", "insert"
+        input this, 'button', "add",    "list.push(Math.random())",
+            title:"add to bottom"
+        input this, 'button', "remove", "list.shift()",
+            title:"remove from top"
+        @$br()
+        input this, 'button', "insert", "list.insert(i, text)",
+            title:"insert at position"
+        @span " where "
+        @$label for:'nmb', ->
+            @text " i="
+            input this, 'number','nmb', "0"
+        @$label for:'text', ->
+            @text " text="
+            input this, 'text',  'text', "", placeholder:"try me!"
 
     @$ul class:'list', ->
         items = new List
