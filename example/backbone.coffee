@@ -28,7 +28,7 @@ class BackboneExample extends Backbone.View
     template: (view) -> jqueryify new Template schema:5, ->
         @$div class:'controls', ->
 
-            input this, 'button', "add",    "view.model.add({value:}Math.random()})",
+            input this, 'button', "add","view.model.add({value:Math.random()})",
                 title:"add to bottom"
 
         @$ul class:'list', ->
