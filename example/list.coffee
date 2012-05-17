@@ -28,31 +28,21 @@ class ListExample extends Backbone.View
     template: (view) -> jqueryify new Template schema:5, ->
         @$div class:'controls', ->
 
-            input this, 'button', "add",    "list.push(Math.random())",
+            input this, 'button', "add",    "view.model.add({value:}Math.random()})",
                 title:"add to bottom"
-            input this, 'button', "remove", "list.shift()",
-                title:"remove from top"
-            @$br()
-            input this, 'button', "insert", "list.insert(i, text)",
-                title:"insert at position"
-            @span " where "
-            @$label for:'nmb', ->
-                @text " i="
-                input this, 'number','nmb', "0"
-            @$label for:'text', ->
-                @text " text="
-                input this, 'text',  'text', "", placeholder:"try me!"
 
         @$ul class:'list', ->
-            view.items = new List
-            view.on 'click:add', =>
-                console.log "add entry"
-                view.items.push @$li -> @$p "#{Math.random()}"
-            view.on 'click:insert', (i, text) =>
-                console.log "insert entry"
-                view.items.insert i, @$li -> @$p "#{text}"
-            view.on 'click:remove', ->
-                view.items.shift()?.remove()
+            items = new List
+            view.model.on 'remove', (entry, collection, options) ->
+                items.remove(options.index)?.remove()
+            view.model.on 'add', (entry, collection, options) =>
+                items.insert options.index, @$li ->
+                    @$input
+                        type:'button'
+                        class:"remove control"
+                        'data-cid':entry.cid
+                        value:"✖"
+                    @$p "#{entry.get 'value'}"
 
     # patch some backbone internals
 
@@ -77,31 +67,21 @@ class ListExample extends Backbone.View
 
     events:
         'click #add':    "on_add"
-        'click #remove': "on_remove"
-        'click #insert': "on_insert"
+        'click .remove': "on_remove"
 
     on_add: EventHandler (ev) ->
-        @trigger 'click:add'
+        @model.add value:"#{Math.random()}"
 
     on_remove: EventHandler (ev) ->
-        @trigger 'click:remove'
-
-    on_insert: EventHandler (ev) ->
-        i = parseInt($('#nmb').val())
-        return if i > @items.length
-        @trigger 'click:insert', i, $('#text').val()
-
-    # some logic
-
-    initialize: ->
-        @items = null # HACK gets set by the template
-
+        if(entry = @model.getByCid($(ev.target).data('cid')))?
+            @model.remove(entry)
 
 
 # initialize
 
 $(document).ready ->
     example = new ListExample
+        model:new Backbone.Collection
     window.example = example
     example.render ($el) ->
         $('body').append($el)
