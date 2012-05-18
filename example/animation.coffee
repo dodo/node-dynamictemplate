@@ -1,3 +1,4 @@
+srcdirurl = "https://github.com/dodo/node-dynamictemplate/blob/master/example"
 { Template, jqueryify } = window.dynamictemplate
 { random, floor, pow } = Math
 running = yes
@@ -45,7 +46,7 @@ animation = jqueryify new Template schema:5, ->
     @$div class:'controls', ->
         button this, "start", "▸"
         button this, "stop",  "■"
-        @$a href:"./animation.coffee", "Source Code"
+        @$a href:"#{srcdirurl}/animation.coffee", "Source Code"
     @$div class:'canvas', ->
         createSquare this
         createSquare this

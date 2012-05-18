@@ -1,3 +1,4 @@
+srcdirurl = "https://github.com/dodo/node-dynamictemplate/blob/master/example"
 { Template, domify } = window.dynamictemplate
 { random, floor, min, max } = Math
 running = yes
@@ -169,7 +170,7 @@ svg = domify new Template schema:5, ->
     @$div class:'controls', ->
         button this, "start", "▸"
         button this, "stop",  "■"
-        @$a href:"./quadtree.coffee", "Source Code"
+        @$a href:"#{srcdirurl}/quadtree.coffee", "Source Code"
     @$div class:'canvas', ->
         @add new Template schema:'svg', ->
             @$svg {
