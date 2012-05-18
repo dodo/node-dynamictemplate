@@ -29,6 +29,31 @@ EventHandler = (handler) ->
 input = (tag, type, id, value, opts = {}) ->
     tag.$input(_.extend({class:type, name:id, type, id, value}, opts))
 
+sync = (items, collection, options) ->
+    # now its gonna get dirty!
+    bycid = {}
+    removed = []
+    old_models = []
+    # rebuild old collection state
+    for item in items
+        bycid[item.cid] = item
+        old_models.push collection.getByCid(item.cid)
+    # apply diff patches on items list
+    for patch in adiff.diff(old_models, collection.models)
+        # remove all items from dom before splicing them in
+        for i in [(patch[0]) ... (patch[0]+patch[1])]
+            items[i].remove(soft:yes)
+            removed.push items[i]
+        # replace models with items
+        for i in [2 ... patch.length]
+            patch[i] = bycid[patch[i].cid]
+        # apply patch!
+        items.splice.apply(items, patch)
+    # read all removed items - this only works in the assumption,
+    #   that the collection doesn't change its size
+    for item in removed
+        @add(item)
+
 # different comparators
 
 ascending = (model) ->
@@ -45,39 +70,15 @@ class BackboneExample extends Backbone.View
     template: (view) -> jqueryify new Template schema:5, ->
         @$div class:'controls', ->
 
-            input this, 'button', "add", "view.model.add({value:Math.random()})"
+            input this, 'button', "add", "collection.add({value:Math.random()})"
             input this, 'button', "desc", "▲", title:"descending"
             input this, 'button', "asc",  "▼", title:"ascending"
 
         @$ul class:'list', ->
             items = new List
+            view.model.on 'reset', sync.bind(this, items)
             view.model.on 'remove', (entry, collection, options) ->
                 items.remove(options.index)?.remove()
-            view.model.on 'reset', =>
-                # now its gonna get dirty!
-                bycid = {}
-                removed = []
-                old_models = []
-                # rebuild old collection state
-                for item in items
-                    bycid[item.cid] = item
-                    old_models.push view.model.getByCid(item.cid)
-                # apply diff patches on items list
-                for patch in adiff.diff(old_models, view.model.models)
-                    # remove all items from dom before splicing them in
-                    for i in [(patch[0]) ... (patch[0]+patch[1])]
-                        items[i].remove(soft:yes)
-                        removed.push items[i]
-                    # replace models with items
-                    for i in [2 ... patch.length]
-                        patch[i] = bycid[patch[i].cid]
-                    # apply patch!
-                    items.splice.apply(items, patch)
-                # read all removed items - this only works in the assumption,
-                #   that the collection doesn't change its size
-                for item in removed
-                    @add(item)
-
             view.model.on 'add', (entry, collection, options) =>
                 items.insert options.index, @$li ->
                     @cid = entry.cid # mark it to find its model again (on reset)
@@ -86,6 +87,7 @@ class BackboneExample extends Backbone.View
                         class:"remove control"
                         'data-cid':entry.cid
                         value:"✖"
+                        title:"delete"
                     @$p "#{entry.get 'value'}"
 
     # patch some backbone internals
