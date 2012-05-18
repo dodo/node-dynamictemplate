@@ -59,7 +59,7 @@ svg = domify new Template schema:5, ->
                             g:floor(255 * random())
                             b:floor(255 * random())
                             a:min(0.8, 0.01 + random())
-                    , 10
+                    , 100
 
 
 # initialize
