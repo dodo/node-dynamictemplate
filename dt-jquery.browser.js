@@ -420,7 +420,7 @@ require.define("/dt-jquery.js", function (require, module, exports, __dirname, _
     };
 
     JQueryAdapter.prototype.onadd = function(parent, el) {
-      var ecb, pcb, that, _base, _base2, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
+      var cb, ecb, pcb, that, _base, _base2, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
       if (removed(el)) return;
       if (el === el.builder) {
         if ((_ref2 = el._jquery) == null) {
@@ -442,6 +442,10 @@ require.define("/dt-jquery.js", function (require, module, exports, __dirname, _
       }
       if ((_ref7 = parent._jquery_done) == null) {
         parent._jquery_done = deferred_callbacks();
+      }
+      el._jquery_manip.reset();
+      while ((cb = el._jquery_manip.callbacks.shift()) != null) {
+        this.animation.push(cb);
       }
       ecb = el._jquery_done.callback();
       pcb = parent._jquery_done.callback();
@@ -479,7 +483,7 @@ require.define("/dt-jquery.js", function (require, module, exports, __dirname, _
           var bool, _ref10, _ref11;
           if (removed(this)) return;
           if (this.parent === this.parent.builder) {
-            bool = !(this.parent.parent != null) || (this.parent.parent === ((_ref10 = this.parent.parent) != null ? _ref10.builder : void 0) && ((_ref11 = this.parent.parent) != null ? _ref11._jquery_done : void 0) === true);
+            bool = !(this.parent.parent != null) || (this.parent.parent === ((_ref10 = this.parent.parent) != null ? _ref10.builder : void 0) && ((_ref11 = this.parent.parent) != null ? _ref11._jquery_insert : void 0) === true);
             if (bool && this.parent._jquery_insert === true) {
               return that.animation.push(this._jquery_insert);
             } else {
@@ -543,43 +547,61 @@ require.define("/dt-jquery.js", function (require, module, exports, __dirname, _
     };
 
     JQueryAdapter.prototype.ontext = function(el, text) {
+      var _ref2;
       var _this = this;
+      if ((_ref2 = el._jquery_manip) == null) {
+        el._jquery_manip = cancelable_and_retrivable_callbacks(true);
+      }
       return this.animation.push(el._jquery_manip(function() {
         return _this.fn.text(el, text);
       }));
     };
 
     JQueryAdapter.prototype.onraw = function(el, html) {
+      var _ref2;
       var _this = this;
+      if ((_ref2 = el._jquery_manip) == null) {
+        el._jquery_manip = cancelable_and_retrivable_callbacks(true);
+      }
       return this.animation.push(el._jquery_manip(function() {
         return _this.fn.raw(el, html);
       }));
     };
 
     JQueryAdapter.prototype.onattr = function(el, key, value) {
+      var _ref2;
       var _this = this;
+      if ((_ref2 = el._jquery_manip) == null) {
+        el._jquery_manip = cancelable_and_retrivable_callbacks(true);
+      }
       return this.animation.push(el._jquery_manip(function() {
         return _this.fn.attr(el, key, value);
       }));
     };
 
     JQueryAdapter.prototype.onshow = function(el) {
-      return this.fn.show(el);
+      if (el._jquery != null) return this.fn.show(el);
     };
 
     JQueryAdapter.prototype.onhide = function(el) {
-      return this.fn.hide(el);
+      if (el._jquery != null) return this.fn.hide(el);
     };
 
-    JQueryAdapter.prototype.onremove = function(el) {
-      var _ref2;
+    JQueryAdapter.prototype.onremove = function(el, opts) {
+      var _ref2, _ref3, _ref4;
       if (el._jquery == null) return;
-      this.fn.remove(el);
-      el._jquery_done.reset();
-      if ((_ref2 = el._jquery_manip) != null) _ref2.cancel();
-      delete el._jquery_manip;
-      delete el._jquery_done;
-      return delete el._jquery;
+      this.fn.remove(el, opts);
+      if ((_ref2 = el._jquery_parent_done_done) != null) _ref2.reset();
+      if ((_ref3 = el._jquery_done) != null) _ref3.reset();
+      if ((_ref4 = el._jquery_manip) != null) _ref4.cancel();
+      delete el._jquery_parent_done;
+      delete el._jquery_replace;
+      delete el._jquery_insert;
+      if (!opts.soft) {
+        delete el._jquery_manip;
+        delete el._jquery_done;
+        return delete el._jquery;
+      }
     };
 
     JQueryAdapter.prototype.onend = function() {
@@ -621,7 +643,7 @@ require.define("/dt-jquery.js", function (require, module, exports, __dirname, _
 });
 
 require.define("/node_modules/animation/package.json", function (require, module, exports, __dirname, __filename) {
-    module.exports = {"name":"animation","description":"animation timing & handling","version":"0.1.1","homepage":"https://github.com/dodo/node-animation","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/node-animation.git"},"main":"animation.js","engines":{"node":">= 0.4.x"},"keywords":["request","animation","frame","interval","node","browser"],"scripts":{"prepublish":"cake build"},"dependencies":{"ms":">= 0.1.0","request-animation-frame":">= 0.1.0"},"devDependencies":{"muffin":">= 0.2.6","coffee-script":">= 1.1.2"}}
+    module.exports = {"name":"animation","description":"animation timing & handling","version":"0.1.2","homepage":"https://github.com/dodo/node-animation","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/node-animation.git"},"main":"animation.js","engines":{"node":">= 0.4.x"},"keywords":["request","animation","frame","interval","node","browser"],"scripts":{"prepublish":"cake build"},"dependencies":{"ms":">= 0.1.0","request-animation-frame":">= 0.1.0"},"devDependencies":{"muffin":">= 0.2.6","coffee-script":">= 1.1.2"}}
 });
 
 require.define("/node_modules/animation/animation.js", function (require, module, exports, __dirname, __filename) {
@@ -692,9 +714,7 @@ require.define("/node_modules/animation/lib/animation.js", function (require, mo
       t = now();
       tick = function(success) {
         var dt, executiontime, nextid, started;
-        if (requestAnimationFrame.isNative) {
-          if (this.need_next_tick()) nextid = this.nextTick();
-        }
+        if (this.need_next_tick()) nextid = this.nextTick();
         started = now();
         dt = started - t;
         executiontime = success ? this.executiontime : this.timoutexecutiontime;
@@ -706,10 +726,7 @@ require.define("/node_modules/animation/lib/animation.js", function (require, mo
         this.emit('tick', dt);
         if (typeof callback === "function") callback(dt);
         this.work_queue(started, dt, executiontime);
-        if (nextid == null) {
-          if (this.need_next_tick()) nextid = this.nextTick();
-          return;
-        }
+        if (nextid == null) return;
         if (!this.need_next_tick()) {
           if (this.timeouttime != null) clearTimeout(nextid.timeout);
           cancelAnimationFrame(nextid);
@@ -940,7 +957,7 @@ EventEmitter.prototype.listeners = function(type) {
 });
 
 require.define("/node_modules/animation/node_modules/request-animation-frame/package.json", function (require, module, exports, __dirname, __filename) {
-    module.exports = {"name":"request-animation-frame","description":"requestAnimationFrame shim","version":"0.1.0","homepage":"https://github.com/dodo/requestAnimationFrame.js","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/requestAnimationFrame.js.git"},"main":"shim.js","engines":{"node":">= 0.4.x"},"keywords":["request","animation","frame","shim","browser","polyfill"],"scripts":{"prepublish":"cake build"},"devDependencies":{"muffin":">= 0.2.6","coffee-script":">= 1.1.2"}}
+    module.exports = {"name":"request-animation-frame","description":"requestAnimationFrame shim","version":"0.1.1","homepage":"https://github.com/dodo/requestAnimationFrame.js","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/requestAnimationFrame.js.git"},"main":"shim.js","engines":{"node":">= 0.4.x"},"keywords":["request","animation","frame","shim","browser","polyfill"],"scripts":{"prepublish":"cake build"},"devDependencies":{"muffin":">= 0.2.6","coffee-script":">= 1.1.2"}}
 });
 
 require.define("/node_modules/animation/node_modules/request-animation-frame/shim.js", function (require, module, exports, __dirname, __filename) {
@@ -951,16 +968,22 @@ module.exports = require('./lib/shim')
 
 require.define("/node_modules/animation/node_modules/request-animation-frame/lib/shim.js", function (require, module, exports, __dirname, __filename) {
     (function() {
-  var _ref;
+  var max, now, _ref, _ref2;
 
-  _ref = (function() {
-    var cancel, isNative, last, request, vendor, _i, _len, _ref;
+  now = (_ref = Date.now) != null ? _ref : function() {
+    return new Date().getTime();
+  };
+
+  max = Math.max;
+
+  _ref2 = (function() {
+    var cancel, isNative, last, request, vendor, _i, _len, _ref2;
     last = 0;
     request = typeof window !== "undefined" && window !== null ? window.requestAnimationFrame : void 0;
     cancel = typeof window !== "undefined" && window !== null ? window.cancelAnimationFrame : void 0;
-    _ref = ["webkit", "moz", "o", "ms"];
-    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
-      vendor = _ref[_i];
+    _ref2 = ["webkit", "moz", "o", "ms"];
+    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
+      vendor = _ref2[_i];
       if (cancel == null) {
         cancel = (typeof window !== "undefined" && window !== null ? window["" + vendor + "cancelAnimationFrame"] : void 0) || (typeof window !== "undefined" && window !== null ? window["" + vendor + "cancelRequestAnimationFrame"] : void 0);
       }
@@ -972,8 +995,8 @@ require.define("/node_modules/animation/node_modules/request-animation-frame/lib
     request = request != null ? request : function(callback, timeout) {
       var cur, id, time;
       if (timeout == null) timeout = 16;
-      cur = new Date().getTime();
-      time = Math.max(0, timeout + last - cur);
+      cur = now();
+      time = max(0, timeout + last - cur);
       id = setTimeout(function() {
         return typeof callback === "function" ? callback(cur + time) : void 0;
       }, time);
@@ -987,7 +1010,7 @@ require.define("/node_modules/animation/node_modules/request-animation-frame/lib
     };
     cancel.isNative = isNative;
     return [request, cancel];
-  })(), this.requestAnimationFrame = _ref[0], this.cancelAnimationFrame = _ref[1];
+  })(), this.requestAnimationFrame = _ref2[0], this.cancelAnimationFrame = _ref2[1];
 
 }).call(this);
 
@@ -1085,9 +1108,9 @@ require.define("/util.js", function (require, module, exports, __dirname, __file
     return res;
   };
 
-  cancelable_and_retrivable_callbacks = function() {
-    var canceled, res;
-    canceled = false;
+  cancelable_and_retrivable_callbacks = function(canceled) {
+    var res;
+    if (canceled == null) canceled = false;
     res = function(cb) {
       return function() {
         if (canceled) {
@@ -1215,8 +1238,12 @@ require.define("/fn.js", function (require, module, exports, __dirname, __filena
     hide: function(el) {
       return el._jquery.hide();
     },
-    remove: function(el) {
-      return el._jquery.remove();
+    remove: function(el, opts) {
+      if (opts.soft) {
+        return el._jquery.detach();
+      } else {
+        return el._jquery.remove();
+      }
     }
   };
 

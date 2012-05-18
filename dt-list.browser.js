@@ -319,11 +319,13 @@ exports.extname = function(path) {
 require.define("/list.js", function (require, module, exports, __dirname, __filename) {
     (function() {
   var List, Order, mark;
-  var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+  var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; }, __slice = Array.prototype.slice;
 
   Order = require('order').Order;
 
   mark = function(el) {
+    var _ref;
+    el = (_ref = el.xml) != null ? _ref : el;
     return function(done) {
       el._list_ready = done;
       return el;
@@ -359,6 +361,20 @@ require.define("/list.js", function (require, module, exports, __dirname, __file
       return List.__super__.insert.call(this, i, mark(el));
     };
 
+    List.prototype.splice = function() {
+      var d, el, els, i;
+      i = arguments[0], d = arguments[1], els = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
+      return List.__super__.splice.apply(this, [i, d].concat(__slice.call((function() {
+        var _i, _len, _results;
+        _results = [];
+        for (_i = 0, _len = els.length; _i < _len; _i++) {
+          el = els[_i];
+          _results.push(mark(el));
+        }
+        return _results;
+      })())));
+    };
+
     return List;
 
   })();
@@ -384,7 +400,7 @@ require.define("/list.js", function (require, module, exports, __dirname, __file
 });
 
 require.define("/node_modules/order/package.json", function (require, module, exports, __dirname, __filename) {
-    module.exports = {"name":"order","description":"handle ordered async lists","version":"0.0.1","homepage":"https://github.com/dodo/node-order","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/node-order.git"},"main":"order.js","engines":{"node":">= 0.4.x"},"keywords":["order","list","array","collection","sequence","async","control","flow"],"scripts":{"test":"cake build && nodeunit test","prepublish":"cake build"},"devDependencies":{"nodeunit":">= 0.5.4","muffin":">= 0.2.6","coffee-script":">= 1.1.3"}}
+    module.exports = {"name":"order","description":"handle ordered async lists","version":"0.1.0","homepage":"https://github.com/dodo/node-order","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/node-order.git"},"main":"order.js","engines":{"node":">= 0.4.x"},"keywords":["order","list","array","collection","sequence","async","control","flow"],"scripts":{"test":"cake build && nodeunit test","prepublish":"cake build"},"devDependencies":{"nodeunit":">= 0.5.4","muffin":">= 0.2.6","coffee-script":">= 1.1.3"}}
 });
 
 require.define("/node_modules/order/order.js", function (require, module, exports, __dirname, __filename) {
@@ -395,8 +411,10 @@ module.exports = require('./lib/order')
 
 require.define("/node_modules/order/lib/order.js", function (require, module, exports, __dirname, __filename) {
     (function() {
-  var Order, delay, mark, ready, release;
+  var Order, delay, mark, ready, release, splice;
   var __slice = Array.prototype.slice, __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+
+  splice = Array.prototype.splice;
 
   mark = function(list) {
     list._sync = true;
@@ -451,6 +469,7 @@ require.define("/node_modules/order/lib/order.js", function (require, module, ex
 
     function Order(callback) {
       this.callback = callback;
+      this.splice = __bind(this.splice, this);
       this.remove = __bind(this.remove, this);
       this.insert = __bind(this.insert, this);
       this.shift = __bind(this.shift, this);
@@ -522,11 +541,11 @@ require.define("/node_modules/order/lib/order.js", function (require, module, ex
       }
       this.keys.splice(i, 0, idx);
       this.done.splice(i, 0, false);
-      return release(this, this.splice(i, 0, entry(ready.bind(mark(this), idx))));
+      return release(this, splice.call(this, i, 0, entry(ready.bind(mark(this), idx))));
     };
 
     Order.prototype.remove = function(i) {
-      var e, _i, _len, _ref, _ref2;
+      var e, _i, _len, _ref, _ref2, _ref3;
       if ((_ref = this.keys[i]) != null) _ref.i = NaN;
       this.done.splice(i, 1);
       this.keys.splice(i, 1);
@@ -535,7 +554,59 @@ require.define("/node_modules/order/lib/order.js", function (require, module, ex
         e = _ref2[_i];
         e.i--;
       }
-      return this.splice(i, 1);
+      return (_ref3 = splice.call(this, i, 1)) != null ? _ref3[0] : void 0;
+    };
+
+    Order.prototype.splice = function() {
+      var del, dones, e, entries, entry, i, idxs, index, len, result, sync, syncs, _i, _j, _k, _len, _len2, _len3, _len4, _ref, _ref2, _ref3, _ref4;
+      index = arguments[0], del = arguments[1], entries = 3 <= arguments.length ? __slice.call(arguments, 2) : [];
+      if (index == null) return Order.__super__.splice.apply(this, arguments);
+      len = entries.length;
+      _ref = this.keys.slice(index, (index + del));
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        e = _ref[_i];
+        e.i = NaN;
+      }
+      idxs = (function() {
+        var _results;
+        _results = [];
+        for (i = 0; 0 <= len ? i < len : i > len; 0 <= len ? i++ : i--) {
+          _results.push({
+            i: i + index
+          });
+        }
+        return _results;
+      })();
+      dones = (function() {
+        var _results;
+        _results = [];
+        for (i = 0; 0 <= len ? i < len : i > len; 0 <= len ? i++ : i--) {
+          _results.push(false);
+        }
+        return _results;
+      })();
+      (_ref2 = this.done).splice.apply(_ref2, [index, del].concat(__slice.call(dones)));
+      (_ref3 = this.keys).splice.apply(_ref3, [index, del].concat(__slice.call(idxs)));
+      _ref4 = this.keys.slice(index + len);
+      for (_j = 0, _len2 = _ref4.length; _j < _len2; _j++) {
+        e = _ref4[_j];
+        e.i = e.i - del + len;
+      }
+      syncs = [];
+      for (i = 0, _len3 = entries.length; i < _len3; i++) {
+        entry = entries[i];
+        mark(this);
+        entries[i] = entry(ready.bind(this, idxs[i]));
+        syncs.push(this._sync);
+      }
+      mark(this);
+      result = Order.__super__.splice.apply(this, [index, del].concat(__slice.call(entries)));
+      for (_k = 0, _len4 = syncs.length; _k < _len4; _k++) {
+        sync = syncs[_k];
+        if (typeof sync === "function") sync();
+      }
+      release(this);
+      return result;
     };
 
     return Order;

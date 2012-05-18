@@ -347,7 +347,7 @@ require.define("/dynamictemplate.js", function (require, module, exports, __dirn
 });
 
 require.define("/node_modules/asyncxml/package.json", function (require, module, exports, __dirname, __filename) {
-    module.exports = {"name":"asyncxml","description":"async xml builder and generator","version":"0.4.0","homepage":"https://github.com/dodo/node-asyncxml","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/node-asyncxml.git"},"main":"asyncxml.js","engines":{"node":">= 0.4.x"},"keywords":["async","xml","generation","stream","browser"],"scripts":{"test":"cake build && nodeunit test","prepublish":"cake build"},"devDependencies":{"coffee-script":">= 1.1.2","muffin":">= 0.2.6","browserify":"1.6.1","scopify":">= 0.1.0","dt-stream":">= 0.1.1","nodeunit":">= 0.7.4"},"licenses":[{"type":"MIT","url":"http://github.com/dodo/node-asyncxml/raw/master/LICENSE"}]}
+    module.exports = {"name":"asyncxml","description":"async xml builder and generator","version":"0.4.2","homepage":"https://github.com/dodo/node-asyncxml","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/node-asyncxml.git"},"main":"asyncxml.js","engines":{"node":">= 0.4.x"},"keywords":["async","xml","generation","stream","browser"],"scripts":{"test":"cake build && nodeunit test","prepublish":"cake build"},"devDependencies":{"coffee-script":">= 1.1.2","muffin":">= 0.2.6","browserify":"1.6.1","scopify":">= 0.1.0","dt-stream":">= 0.1.1","nodeunit":">= 0.7.4"},"licenses":[{"type":"MIT","url":"http://github.com/dodo/node-asyncxml/raw/master/LICENSE"}]}
 });
 
 require.define("/node_modules/asyncxml/asyncxml.js", function (require, module, exports, __dirname, __filename) {
@@ -397,6 +397,7 @@ require.define("/node_modules/asyncxml/lib/xml.js", function (require, module, e
     var dispose, listeners, pipe, remove, replace, wire;
     listeners = {};
     pipe = function(event) {
+      if (listeners[event] != null) return;
       return typeof child.on === "function" ? child.on(event, listeners[event] = function() {
         return parent.emit.apply(parent, [event].concat(__slice.call(arguments)));
       }) : void 0;
@@ -426,15 +427,20 @@ require.define("/node_modules/asyncxml/lib/xml.js", function (require, module, e
       }
       return _results;
     };
-    remove = function() {
-      dispose();
+    remove = function(soft) {
       if (this === child) {
         parent.removeListener('removed', remove);
+        parent.removeListener('replaced', replace);
+        child.removeListener('replaced', replace);
+        return dispose();
+      } else if (soft) {
+        return parent.once('removed', remove);
       } else {
         child.removeListener('removed', remove);
+        parent.removeListener('replaced', replace);
+        child.removeListener('replaced', replace);
+        return dispose();
       }
-      parent.removeListener('replaced', replace);
-      return child.removeListener('replaced', replace);
     };
     replace = function(tag) {
       if (this === child) {
@@ -470,6 +476,7 @@ require.define("/node_modules/asyncxml/lib/xml.js", function (require, module, e
       if (tag.closed) if (typeof tag.emit === "function") tag.emit('close', tag);
       return callback != null ? callback.call(_this, tag) : void 0;
     };
+    newtag.parent = this;
     if (this.builder != null) {
       return this.builder.approve('new', this, newtag, wire_tag);
     } else {
@@ -485,7 +492,6 @@ require.define("/node_modules/asyncxml/lib/xml.js", function (require, module, e
     opts.builder = this.builder;
     TagInstance = (_ref6 = (_ref7 = this.builder) != null ? _ref7.Tag : void 0) != null ? _ref6 : Tag;
     newtag = new TagInstance(name, attrs, null, opts);
-    newtag.parent = this;
     add_tag.call(this, newtag, function(tag) {
       if (children != null) return tag.children(children, opts);
     });
@@ -709,11 +715,14 @@ require.define("/node_modules/asyncxml/lib/xml.js", function (require, module, e
       return tag;
     };
 
-    Tag.prototype.remove = function() {
-      if (!this.closed) this.closed = 'removed';
-      this.emit('remove', this);
-      this.emit('removed');
-      this.removeAllListeners();
+    Tag.prototype.remove = function(opts) {
+      if (opts == null) opts = {};
+      if (!(this.closed || opts.soft)) this.closed = 'removed';
+      this.emit('remove', this, opts);
+      if (this !== this.builder) this.builder = null;
+      this.parent = null;
+      this.emit('removed', opts.soft);
+      if (!opts.soft) this.removeAllListeners();
       return this;
     };
 
@@ -754,6 +763,8 @@ require.define("/node_modules/asyncxml/lib/xml.js", function (require, module, e
     Builder.prototype.show = Tag.prototype.show;
 
     Builder.prototype.hide = Tag.prototype.hide;
+
+    Builder.prototype.remove = Tag.prototype.remove;
 
     Builder.prototype.toString = function() {
       return "[object AsyncXMLBuilder]";
@@ -1148,8 +1159,11 @@ require.define("/template.js", function (require, module, exports, __dirname, __
       var Builder, ExtendedBuilder, ExtendedTag, Tag, old_query, s, schema_input, _ref2, _ref3, _ref4, _ref5, _ref6;
       var _this = this;
       if (opts == null) opts = {};
+      this.hide = __bind(this.hide, this);
+      this.show = __bind(this.show, this);
       this.ready = __bind(this.ready, this);
       this.end = __bind(this.end, this);
+      this.remove = __bind(this.remove, this);
       this.register = __bind(this.register, this);
       if (typeof opts === 'function') {
         _ref2 = [opts, {}], template = _ref2[0], opts = _ref2[1];
@@ -1213,7 +1227,7 @@ require.define("/template.js", function (require, module, exports, __dirname, __
         });
       });
       process.nextTick(function() {
-        var d, dt, _ref7, _ref8;
+        var d, dt;
         if (opts.doctype === true) opts.doctype = 'html';
         d = aliases[opts.doctype] || opts.doctype;
         if (opts.doctype && (dt = typeof doctype[d] === "function" ? doctype[d](opts) : void 0)) {
@@ -1221,15 +1235,9 @@ require.define("/template.js", function (require, module, exports, __dirname, __
           _this.xml.emit('data', _this.xml, dt);
         }
         if (typeof template === 'function') {
-          if ((_ref7 = _this.xml) != null ? _ref7._debug : void 0) {
-            console.error("RUN", _this.xml._view.cid);
-          }
           template.call(_this.xml);
           if (opts.end) return _this.end();
         } else {
-          if ((_ref8 = _this.xml) != null ? _ref8._debug : void 0) {
-            console.error("PASS", _this.xml._view.cid);
-          }
           return _this.end(template);
         }
       });
@@ -1244,6 +1252,11 @@ require.define("/template.js", function (require, module, exports, __dirname, __
       return (_ref2 = this.xml).register.apply(_ref2, arguments);
     };
 
+    Template.prototype.remove = function() {
+      var _ref2;
+      return (_ref2 = this.xml).remove.apply(_ref2, arguments);
+    };
+
     Template.prototype.end = function() {
       var _ref2;
       return (_ref2 = this.xml).end.apply(_ref2, arguments);
@@ -1252,6 +1265,16 @@ require.define("/template.js", function (require, module, exports, __dirname, __
     Template.prototype.ready = function() {
       var _ref2;
       return (_ref2 = this.xml).ready.apply(_ref2, arguments);
+    };
+
+    Template.prototype.show = function() {
+      var _ref2;
+      return (_ref2 = this.xml).show.apply(_ref2, arguments);
+    };
+
+    Template.prototype.hide = function() {
+      var _ref2;
+      return (_ref2 = this.xml).hide.apply(_ref2, arguments);
     };
 
     return Template;
