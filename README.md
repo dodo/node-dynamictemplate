@@ -107,4 +107,4 @@ template = ({title, desc, path, user, max}) ->
                 @$p shoutify "bye"
 ```
 
-[![Build Status](https://secure.travis-ci.org/dodo/node-asyncxml.png)](http://travis-ci.org/dodo/node-dynamictemplate)
+[![Build Status](https://secure.travis-ci.org/dodo/node-dynamictemplate.png)](http://travis-ci.org/dodo/node-dynamictemplate)
