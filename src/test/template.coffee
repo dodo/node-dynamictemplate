@@ -164,6 +164,5 @@ module.exports =
                 @$div ->
                     @$p "foo"
                     @$p "bar"
-#                 @ready æ.done
+                @ready æ.done
         , 5
-        setTimeout æ.done, 20
