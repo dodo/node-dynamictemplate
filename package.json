@@ -13,7 +13,7 @@
 , "dependencies": {
     "bufferstream": ">= 0.5.1",
     "dt-stream": ">= 0.1.1",
-    "asyncxml": ">= 0.4.2"}
+    "asyncxml": ">= 0.4.3"}
 , "devDependencies": {
     "browserify": "1.6.1",
     "scopify": ">= 0.2.1",
