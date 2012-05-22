@@ -1,6 +1,6 @@
 { "name": "dynamictemplate"
 , "description": "Δt - async & dynamic templating engine"
-, "version": "0.5.3"
+, "version": "0.5.4"
 , "homepage": "https://github.com/dodo/node-dynamictemplate"
 , "author": "dodo (https://github.com/dodo)"
 , "repository": {"type": "git", "url": "git://github.com/dodo/node-dynamictemplate.git"}
