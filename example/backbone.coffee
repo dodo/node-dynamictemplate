@@ -10,14 +10,6 @@ adiff = window.adiff({ # npm i adiff - https://github.com/dominictarr/adiff
         return a is b
 }, window.adiff)
 
-# patch JQueryAdapter to use the list extension
-
-JQueryAdapter = jqueryify.Adapter
-jqueryify = (opts, tpl) ->
-    [tpl, opts] = [opts, null] unless tpl?
-    List.jqueryify new JQueryAdapter(tpl, opts)
-    return tpl
-
 # helpers
 
 EventHandler = (handler) ->
@@ -67,7 +59,7 @@ class BackboneExample extends Backbone.View
 
     # embbeded template
 
-    template: (view) -> jqueryify new Template schema:5, ->
+    template: (view) -> jqueryify use:List.jqueryify, new Template schema:5, ->
         @$div class:'controls', ->
 
             input this, 'button', "add", "collection.add({value:Math.random()})"
