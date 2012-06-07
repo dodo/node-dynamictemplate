@@ -28,7 +28,7 @@ ff = (proto, tags) -> # fill with tags
 
 
 class Template extends EventEmitter
-    constructor: (opts = {}, template) ->
+    constructor: (view, opts = {}, template) ->
         # options
         [template, opts] = [opts, {}] if typeof opts is 'function'
         # defaults
@@ -53,6 +53,7 @@ class Template extends EventEmitter
         # instantiate
         @xml = new ExtendedBuilder opts
         @xml.template = this
+        @xml.view     = view
         # override query
         old_query = @xml.query
         @xml.query = (type, tag, key) ->
