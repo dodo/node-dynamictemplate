@@ -31,6 +31,10 @@ class Template extends EventEmitter
     constructor: (opts = {}, template) ->
         # options
         [template, opts] = [opts, {}] if typeof opts is 'function'
+        view = null
+        if typeof(opts.view) is not "undefined"
+            view = opts.view
+            opts.view = null
         # defaults
         opts.encoding ?= 'utf-8'
         opts.doctype ?= off
@@ -53,6 +57,7 @@ class Template extends EventEmitter
         # instantiate
         @xml = new ExtendedBuilder opts
         @xml.template = this
+        @xml.view     = view 
         # override query
         old_query = @xml.query
         @xml.query = (type, tag, key) ->
