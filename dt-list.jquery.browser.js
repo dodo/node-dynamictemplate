@@ -326,8 +326,10 @@ require.define("/jquery.js", function (require, module, exports, __dirname, __fi
     adapter.fn.add = function(parent, el) {
       var $after, $before, $el, $par, $parpar, after, before, i, idx, list, _ref, _ref2, _ref3, _ref4, _ref5;
       if (typeof el._list_ready === "function") el._list_ready();
+      el._list_ready = null;
       if (el._list == null) return fn_add(parent, el);
       _ref = el._list, idx = _ref.idx, before = _ref.before, after = _ref.after, list = _ref.list;
+      el._list = null;
       $el = el._jquery;
       $par = parent._jquery;
       $after = (_ref2 = list[after]) != null ? _ref2._jquery : void 0;
@@ -341,17 +343,17 @@ require.define("/jquery.js", function (require, module, exports, __dirname, __fi
         } else {
           $par = $par.add($el);
         }
-        if (parent._jquery_wrapped) {
+        if (parent._browser.wrapped) {
           $par.first().replaceWith($el);
           if (parent.parent === ((_ref4 = parent.parent) != null ? _ref4.builder : void 0)) {
             $parpar = (_ref5 = parent.parent) != null ? _ref5._jquery : void 0;
-            parent._jquery_wrapped = false;
+            parent._browser.wrapped = false;
             $par = $par.not(':first');
             if ($parpar != null) {
               $parpar.splice.apply($parpar, [$parpar.index($par), i + 1].concat(__slice.call($par)));
             }
           }
-        } else if ($par.parent().length > 0) {
+        } else if (parent._browser.insert === true) {
           if (before !== -1) {
             $el.insertAfter($before);
           } else if (after !== -1) {
@@ -379,6 +381,8 @@ require.define("/jquery.js", function (require, module, exports, __dirname, __fi
         if ((_ref = newtag._list) == null) newtag._list = oldtag._list;
         oldtag._list = null;
         newtag._list.list[newtag._list.idx] = newtag;
+      }
+      if (oldtag._list_ready != null) {
         if ((_ref2 = newtag._list_ready) == null) {
           newtag._list_ready = oldtag._list_ready;
         }
