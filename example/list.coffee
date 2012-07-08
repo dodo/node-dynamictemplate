@@ -1,12 +1,6 @@
 { Template, List, jqueryify } = window.dynamictemplate
 EventEmitter = Template.__super__.constructor # i prefer nodejs eventemitter
 
-JQueryAdapter = jqueryify.Adapter
-jqueryify = (opts, tpl) ->
-    [tpl, opts] = [opts, null] unless tpl?
-    List.jqueryify new JQueryAdapter(tpl, opts)
-    return tpl
-
 # the templates
 
 input = (tag, type, id, value, opts) ->
@@ -14,7 +8,7 @@ input = (tag, type, id, value, opts) ->
 
 items = null # all our list entries
 tplapi = new EventEmitter # every other event system should be suitable as well
-list = jqueryify new Template schema:5, ->
+list = jqueryify use:List.jqueryify, new Template schema:5, ->
     @$div class:'controls', ->
 
         input this, 'button', "add",    "list.push(Math.random())",

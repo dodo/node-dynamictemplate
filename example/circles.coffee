@@ -70,11 +70,11 @@ svg.ready ->
         $('body').append el
 
     $('#start').live 'click', ->
-        console.log "animation paused."
+        console.log "animation resumed."
         running = yes
 
     $('#stop').live 'click', ->
-        console.log "animation resumed."
+        console.log "animation paused."
         running = no
 
 console.log 'coffeescript loaded.'

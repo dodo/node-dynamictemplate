@@ -1,4 +1,5 @@
 { Template, List, jqueryify } = window.dynamictemplate
+{ random, floor } = Math
 { isArray } = Array
 
 # use an even simpler equals comparator for adiff
@@ -9,14 +10,6 @@ adiff = window.adiff({ # npm i adiff - https://github.com/dominictarr/adiff
         return no if isArray(a) and a.length isnt b.length
         return a is b
 }, window.adiff)
-
-# patch JQueryAdapter to use the list extension
-
-JQueryAdapter = jqueryify.Adapter
-jqueryify = (opts, tpl) ->
-    [tpl, opts] = [opts, null] unless tpl?
-    List.jqueryify new JQueryAdapter(tpl, opts)
-    return tpl
 
 # helpers
 
@@ -42,8 +35,7 @@ sync = (items, collection, options) ->
     for patch in adiff.diff(old_models, collection.models)
         # remove all items from dom before splicing them in
         for i in [(patch[0]) ... (patch[0]+patch[1])]
-            items[i].remove(soft:yes)
-            removed.push items[i]
+            removed.push items[i].remove(soft:yes)
         # replace models with items
         for i in [2 ... patch.length]
             patch[i] = bycid[patch[i].cid]
@@ -80,7 +72,9 @@ class BackboneExample extends Backbone.View
             view.model.on 'remove', (entry, collection, options) ->
                 items.remove(options.index)?.remove()
             view.model.on 'add', (entry, collection, options) =>
-                items.insert options.index, @$li ->
+                [r,g,b] = (floor(255 * entry.get(k)) for k in ['r','g','b'])
+                style = "background:rgba(#{r},#{g},#{b}, 0.3)"
+                items.insert options.index, @$li {style}, ->
                     @cid = entry.cid # mark it to find its model again (on reset)
                     @$input
                         type:'button'
@@ -100,10 +94,11 @@ class BackboneExample extends Backbone.View
         return unless element?
         @el = element
         @el.ready =>
+            console.log "ready"
             do @undelegateEvents if @$el
             @$el = @el.jquery
-            callback?(@$el)
             do @delegateEvents if delegate isnt off
+            callback?(@$el)
         this
 
     render: (callback) ->
@@ -118,8 +113,7 @@ class BackboneExample extends Backbone.View
         'click #asc':    "on_asc"
 
     on_add: EventHandler (ev) ->
-        @model.add value:"#{Math.random()}"
-        console.log @model.length
+        @model.add value:"#{random()}", r:random(), g:random(), b:random()
 
     on_remove: EventHandler (ev) ->
         if(entry = @model.getByCid($(ev.target).data('cid')))?
