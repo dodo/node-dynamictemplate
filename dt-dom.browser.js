@@ -318,43 +318,62 @@ exports.extname = function(path) {
 
 require.define("/dt-dom.js", function (require, module, exports, __dirname, __filename) {
     (function() {
-  var $fyBuilder, BrowserAdapter, DOMAdapter, defaultfn, domify;
-  var __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
+  var Animation, DOMAdapter, EVENTS, delay, domify, isArray, release, removed;
 
-  BrowserAdapter = require('dt-browser').Adapter;
+  Animation = require('animation').Animation;
 
-  defaultfn = require('./fn');
+  isArray = Array.isArray;
 
-  $fyBuilder = function(builder) {
-    var $builder;
-    $builder = builder._dom;
-    builder.dom = $builder;
-    builder.template.dom = $builder;
-    return builder.template._dom = $builder;
+  EVENTS = ['add', 'close', 'end', 'show', 'hide', 'attr', 'text', 'raw', 'remove', 'replace'];
+
+  removed = function(el) {
+    return el.closed === "removed";
+  };
+
+  delay = function(job) {
+    var _ref;
+    if (removed(this)) return;
+    if (this._dom != null) {
+      return job();
+    } else {
+      if ((_ref = this._dom_delay) == null) this._dom_delay = [];
+      return this._dom_delay.push(job);
+    }
+  };
+
+  release = function() {
+    var job, _i, _len, _ref;
+    if (this._dom_delay != null) {
+      _ref = this._dom_delay;
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        job = _ref[_i];
+        job();
+      }
+      return delete this._dom_delay;
+    }
   };
 
   DOMAdapter = (function() {
 
-    __extends(DOMAdapter, BrowserAdapter);
-
     function DOMAdapter(template, opts) {
-      var f, n, _base, _ref, _ref2;
+      var _ref, _ref2, _ref3, _ref4, _ref5;
       this.template = template;
       if (opts == null) opts = {};
-      if ((_ref = this.fn) == null) this.fn = {};
-      for (n in defaultfn) {
-        f = defaultfn[n];
-        if ((_ref2 = (_base = this.fn)[n]) == null) _base[n] = f.bind(this);
-      }
-      DOMAdapter.__super__.constructor.apply(this, arguments);
+      this.builder = (_ref = this.template.xml) != null ? _ref : this.template;
+      if ((_ref2 = opts.timeoutexecution) == null) opts.timeoutexecution = '20ms';
+      if ((_ref3 = opts.execution) == null) opts.execution = '4ms';
+      if ((_ref4 = opts.timeout) == null) opts.timeout = '120ms';
+      if ((_ref5 = opts.toggle) == null) opts.toggle = true;
+      this.animation = new Animation(opts);
+      this.animation.start();
+      this.initialize();
     }
 
     DOMAdapter.prototype.initialize = function() {
       var old_query;
-      DOMAdapter.__super__.initialize.apply(this, arguments);
+      this.listen();
       old_query = this.builder.query;
-      return this.builder.query = function(type, tag, key) {
-        var attr, attrs, name, _i, _len, _ref, _ref2, _ref3;
+      this.builder.query = function(type, tag, key) {
         if (tag._dom == null) return old_query.call(this, type, tag, key);
         if (type === 'attr') {
           return tag._dom.getAttribute(key);
@@ -364,98 +383,162 @@ require.define("/dt-dom.js", function (require, module, exports, __dirname, __fi
           if (key._dom != null) {
             return key;
           } else {
-            if (typeof (key != null ? key.nodeType : void 0) === 'number') {
-              attrs = {};
-              _ref2 = (_ref = key.attributes) != null ? _ref : [];
-              for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-                attr = _ref2[_i];
-                attrs[attr.name] = attr.value;
-              }
-              name = ((_ref3 = key.nodeName) != null ? _ref3 : "").toLowerCase();
-              return new this.builder.Tag(name, attrs, function() {
-                this._dom = key;
-                return this.end();
-              });
-            } else {
-              return old_query.call(this, type, tag, key);
-            }
+            return {
+              _dom: key
+            };
           }
         }
       };
+      return this.template.register('ready', function(tag, next) {
+        if (tag._dom_ready === true) {
+          return next(tag);
+        } else {
+          return tag._dom_ready = function() {
+            return next(tag);
+          };
+        }
+      });
     };
 
-    DOMAdapter.prototype.make = function(el) {
-      var key, value, _ref, _ref2, _ref3, _ref4, _ref5, _ref6;
-      el.namespace = (_ref = el.attrs) != null ? _ref['xmlns'] : void 0;
-      if (el === el.builder) {
-        if ((_ref2 = el._dom) == null) el._dom = [];
-        $fyBuilder(el);
-      } else {
-        if (el.namespace != null) {
-          if ((_ref3 = el._dom) == null) {
-            el._dom = document.createElementNS(el.namespace, el.name);
-          }
+    DOMAdapter.prototype.listen = function() {
+      var _this = this;
+      return EVENTS.forEach(function(event) {
+        return _this.template.on(event, _this["on" + event].bind(_this));
+      });
+    };
+
+    DOMAdapter.prototype.onadd = function(parent, el) {
+      var _this = this;
+      return delay.call(parent, function() {
+        var done;
+        if (parent === parent.builder) {
+          parent._dom.push(el._dom);
+          if (typeof el._dom_ready === "function") el._dom_ready();
+          return el._dom_ready = true;
         } else {
-          if ((_ref4 = el._dom) == null) el._dom = document.createElement(el.name);
+          done = function() {
+            return _this.animation.push(function() {
+              var e, pardom, _i, _len, _ref;
+              pardom = parent._dom;
+              if (isArray(el._dom)) {
+                _ref = el._dom;
+                for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+                  e = _ref[_i];
+                  if (pardom != null) pardom.appendChild(e);
+                }
+              } else {
+                if (pardom != null) pardom.appendChild(el._dom);
+              }
+              if (typeof el._dom_ready === "function") el._dom_ready();
+              return el._dom_ready = true;
+            });
+          };
+          if (el === el.builder) {
+            return el.ready(done);
+          } else {
+            return done();
+          }
         }
+      });
+    };
+
+    DOMAdapter.prototype.onclose = function(el) {
+      var key, value, _ref, _ref2, _ref3;
+      if (el === el.builder) {
+        el._dom = [];
+        return release.call(el);
       }
-      _ref6 = (_ref5 = el.attrs) != null ? _ref5 : {};
-      for (key in _ref6) {
-        value = _ref6[key];
+      el._namespace = el.attrs['xmlns'];
+      if (el._namespace != null) {
+        if ((_ref = el._dom) == null) {
+          el._dom = document.createElementNS(el._namespace, el.name);
+        }
+      } else {
+        if ((_ref2 = el._dom) == null) el._dom = document.createElement(el.name);
+      }
+      _ref3 = el.attrs;
+      for (key in _ref3) {
+        value = _ref3[key];
         el._dom.setAttribute(key, value);
       }
-      return el;
+      return release.call(el);
     };
 
-    DOMAdapter.prototype.createPlaceholder = function(el) {
-      el._jquery = document.createElement('placeholder');
-      if (el === el.builder) return $fyBuilder(el);
+    DOMAdapter.prototype.ontext = function(el, text) {
+      return delay.call(el, function() {
+        return el._dom.textContent = text;
+      });
     };
 
-    DOMAdapter.prototype.removePlaceholder = function(el) {
-      var _ref;
-      if ((_ref = el._dom.parentElement) != null) _ref.removeChild(el._dom);
-      return el._dom = [];
+    DOMAdapter.prototype.onraw = function(el, html) {
+      var _this = this;
+      return delay.call(el, function() {
+        return _this.animation.push(function() {
+          var _ref;
+          return (_ref = el._dom) != null ? _ref.innerHTML = html : void 0;
+        });
+      });
     };
 
     DOMAdapter.prototype.onshow = function(el) {
-      if (el._dom != null) {
-        return DOMAdapter.__super__.onshow.apply(this, arguments);
-      }
+      return delay.call(el, function() {});
     };
 
     DOMAdapter.prototype.onhide = function(el) {
-      if (el._dom != null) {
-        return DOMAdapter.__super__.onhide.apply(this, arguments);
-      }
+      return delay.call(el, function() {});
     };
 
-    DOMAdapter.prototype.onremove = function(el, opts) {
-      if (el._dom != null) DOMAdapter.__super__.onremove.apply(this, arguments);
-      if (!opts.soft) return delete el._dom;
+    DOMAdapter.prototype.onattr = function(el, key, value) {
+      return delay.call(el, function() {
+        if (value === void 0) {
+          return el._dom.removeAttribute(key);
+        } else {
+          return el._dom.setAttribute(key, value);
+        }
+      });
+    };
+
+    DOMAdapter.prototype.onreplace = function(el, tag) {
+      var _this = this;
+      return delay.call(el, function() {
+        return _this.animation.push(function() {
+          var _dom, _ref, _ref2, _ref3;
+          if (removed(el)) return;
+          _dom = (_ref = tag._dom) != null ? _ref : tag;
+          if (!((_dom != null ? _dom.length : void 0) > 0)) return;
+          if ((_ref2 = el.parent) != null) {
+            if ((_ref3 = _ref2._dom) != null) _ref3.replaceChild(_dom);
+          }
+          el._dom = _dom;
+          if (el === _this.builder) return el.dom = _dom;
+        });
+      });
+    };
+
+    DOMAdapter.prototype.onremove = function(el) {
+      return delay.call(el.parent, function() {
+        var _ref, _ref2;
+        if (el._dom != null) {
+          if ((_ref = el.parent) != null) {
+            if ((_ref2 = _ref._dom) != null) _ref2.removeChild(el._dom);
+          }
+        }
+        return delete el._dom;
+      });
     };
 
     DOMAdapter.prototype.onend = function() {
-      return $fyBuilder(this.builder);
-    };
-
-    DOMAdapter.prototype.replace_callback = function(oldtag, newtag) {
-      DOMAdapter.__super__.replace_callback.apply(this, arguments);
-      if (newtag === newtag.builder) return $fyBuilder(newtag);
+      return this.template.dom = this.builder._dom;
     };
 
     return DOMAdapter;
 
   })();
 
-  domify = function(opts, tpl) {
-    var _ref;
-    if (tpl == null) _ref = [opts, null], tpl = _ref[0], opts = _ref[1];
+  domify = function(tpl, opts) {
     new DOMAdapter(tpl, opts);
     return tpl;
   };
-
-  domify.fn = defaultfn;
 
   domify.Adapter = DOMAdapter;
 
@@ -477,344 +560,19 @@ require.define("/dt-dom.js", function (require, module, exports, __dirname, __fi
 
 });
 
-require.define("/node_modules/dt-browser/package.json", function (require, module, exports, __dirname, __filename) {
-    module.exports = {"name":"dt-browser","description":"Δt browser render logic for adapters - async & dynamic templating engine","version":"0.0.4","homepage":"https://github.com/dodo/node-dt-browser","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/node-dt-browser.git"},"main":"dt-browser.js","engines":{"node":">= 0.4.x"},"keywords":["dt","async","dynamic","event","template","generation","stream","browser","shared","lib"],"scripts":{"test":"cake build","prepublish":"cake build"},"dependencies":{"animation":">= 0.0.2"},"devDependencies":{"muffin":">= 0.2.6","coffee-script":">= 1.1.3"},"licenses":[{"type":"MIT","url":"http://github.com/dodo/node-dt-browser/raw/master/LICENSE"}]}
+require.define("/node_modules/animation/package.json", function (require, module, exports, __dirname, __filename) {
+    module.exports = {"name":"animation","description":"animation timing & handling","version":"0.1.0","homepage":"https://github.com/dodo/node-animation","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/node-animation.git"},"main":"animation.js","engines":{"node":">= 0.4.x"},"keywords":["request","animation","frame","interval","node","browser"],"scripts":{"prepublish":"cake build"},"dependencies":{"ms":">= 0.1.0","request-animation-frame":">= 0.1.0"},"devDependencies":{"muffin":">= 0.2.6","coffee-script":">= 1.1.2"}}
 });
 
-require.define("/node_modules/dt-browser/dt-browser.js", function (require, module, exports, __dirname, __filename) {
-    
-module.exports = require('./lib/browser')
-
-});
-
-require.define("/node_modules/dt-browser/lib/browser.js", function (require, module, exports, __dirname, __filename) {
-    (function() {
-  var Animation, BrowserAdapter, BrowserState, Callback, CancelableCallbacks, DeferredCallbacks, EVENTS, SHARED, defaultfn, isArray, prepare_cancelable_manip, prepare_deferred_done, removed, _ref;
-
-  Animation = require('animation').Animation;
-
-  _ref = require('./util'), Callback = _ref.Callback, CancelableCallbacks = _ref.CancelableCallbacks, DeferredCallbacks = _ref.DeferredCallbacks, removed = _ref.removed;
-
-  isArray = Array.isArray;
-
-  SHARED = ['parent_done', 'insert', 'replace', 'done'];
-
-  EVENTS = ['add', 'end', 'show', 'hide', 'attr', 'text', 'raw', 'remove', 'replace'];
-
-  defaultfn = {};
-
-  EVENTS.forEach(function(e) {
-    return defaultfn[e] = function() {
-      throw new Error("no specific fn for " + e + " defined");
-    };
-  });
-
-  prepare_deferred_done = function(el) {
-    var _base, _ref2, _ref3;
-    return (_ref2 = (_base = ((_ref3 = el._browser) != null ? _ref3 : el._browser = new BrowserState)).done) != null ? _ref2 : _base.done = new DeferredCallbacks;
-  };
-
-  prepare_cancelable_manip = function(el, canceled) {
-    var _base, _ref2, _ref3;
-    return (_ref2 = (_base = ((_ref3 = el._browser) != null ? _ref3 : el._browser = new BrowserState)).manip) != null ? _ref2 : _base.manip = new CancelableCallbacks(canceled);
-  };
-
-  BrowserState = (function() {
-
-    function BrowserState() {}
-
-    BrowserState.prototype.initialize = function(prev) {
-      var _ref2, _ref3, _ref4, _ref5;
-      if ((_ref2 = this.parent_done) == null) this.parent_done = new Callback;
-      if ((_ref3 = this.insert) == null) this.insert = new Callback;
-      if ((_ref4 = this.manip) == null) this.manip = new CancelableCallbacks;
-      if ((_ref5 = this.done) == null) this.done = new DeferredCallbacks;
-      this.manip.reset();
-      return this;
-    };
-
-    BrowserState.prototype.mergeInto = function(state) {
-      var key, _i, _len, _ref2;
-      for (_i = 0, _len = SHARED.length; _i < _len; _i++) {
-        key = SHARED[_i];
-        if ((_ref2 = state[key]) == null) state[key] = this[key];
-        this[key] = null;
-      }
-      return state;
-    };
-
-    BrowserState.prototype.destroy = function(opts) {
-      var key, _i, _j, _len, _len2, _ref2, _ref3;
-      if ((_ref2 = this.manip) != null) _ref2.cancel();
-      if ((_ref3 = this.done) != null) _ref3.reset();
-      if (opts.soft) {
-        for (_i = 0, _len = SHARED.length; _i < _len; _i++) {
-          key = SHARED[_i];
-          this[key] = null;
-        }
-      } else {
-        for (_j = 0, _len2 = SHARED.length; _j < _len2; _j++) {
-          key = SHARED[_j];
-          delete this[key];
-        }
-        delete manip;
-      }
-      return this;
-    };
-
-    return BrowserState;
-
-  })();
-
-  BrowserAdapter = (function() {
-
-    function BrowserAdapter(template, opts) {
-      var f, n, plugin, _base, _i, _len, _ref10, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7, _ref8, _ref9;
-      this.template = template;
-      if (opts == null) opts = {};
-      this.builder = (_ref2 = this.template.xml) != null ? _ref2 : this.template;
-      if ((_ref3 = opts.timeoutexecution) == null) opts.timeoutexecution = '32ms';
-      if ((_ref4 = opts.execution) == null) opts.execution = '8ms';
-      if ((_ref5 = opts.timeout) == null) opts.timeout = '120ms';
-      if ((_ref6 = opts.toggle) == null) opts.toggle = true;
-      this.animation = new Animation(opts);
-      this.animation.start();
-      if ((_ref7 = this.fn) == null) this.fn = {};
-      for (n in defaultfn) {
-        f = defaultfn[n];
-        if ((_ref8 = (_base = this.fn)[n]) == null) _base[n] = f.bind(this);
-      }
-      this.initialize();
-      if ((_ref9 = opts.use) == null) opts.use = [];
-      if (!isArray(opts.use)) opts.use = [opts.use];
-      _ref10 = opts.use;
-      for (_i = 0, _len = _ref10.length; _i < _len; _i++) {
-        plugin = _ref10[_i];
-        this.use(plugin);
-      }
-    }
-
-    BrowserAdapter.prototype.initialize = function() {
-      this.listen();
-      this.make(this.builder);
-      prepare_deferred_done(this.builder).callback()();
-      this.template.register('ready', function(tag, next) {
-        var _ref2;
-        if ((_ref2 = tag._browser) == null) tag._browser = new BrowserState;
-        if (tag._browser.ready === true) {
-          return next(tag);
-        } else {
-          return tag._browser.ready = next;
-        }
-      });
-      return this;
-    };
-
-    BrowserAdapter.prototype.use = function(plugin) {
-      if (plugin != null) plugin.call(this, this);
-      return this;
-    };
-
-    BrowserAdapter.prototype.listen = function() {
-      var event, listener, _i, _len;
-      for (_i = 0, _len = EVENTS.length; _i < _len; _i++) {
-        event = EVENTS[_i];
-        if ((listener = this["on" + event]) != null) {
-          this.template.on(event, listener.bind(this));
-        }
-      }
-      return this;
-    };
-
-    BrowserAdapter.prototype.make = function() {
-      throw new Error("Adapter::make not defined.");
-    };
-
-    BrowserAdapter.prototype.createPlaceholder = function() {
-      throw new Error("Adapter::createPlaceholder not defined.");
-    };
-
-    BrowserAdapter.prototype.removePlaceholder = function() {
-      throw new Error("Adapter::removePlaceholder not defined.");
-    };
-
-    BrowserAdapter.prototype.onadd = function(parent, el) {
-      var cb, ecb, pcb, that, _base, _base2, _base3, _base4, _ref2, _ref3, _ref4;
-      if (removed(el)) return;
-      this.make(el);
-      that = this;
-      ((_ref2 = el._browser) != null ? _ref2 : el._browser = new BrowserState).initialize();
-      while ((cb = el._browser.manip.callbacks.shift()) != null) {
-        this.animation.push(cb);
-      }
-      ecb = el._browser.done.callback();
-      pcb = prepare_deferred_done(parent).callback();
-      if (el === el.builder) {
-        ecb();
-      } else {
-        el.ready(ecb);
-      }
-      if (parent === parent.builder) {
-        pcb();
-      } else {
-        parent.ready(pcb);
-      }
-      if (typeof (_base = el._browser.insert).replace === "function") {
-        if ((_ref3 = (_base2 = _base.replace(el)).callback) == null) {
-          _base2.callback = function() {
-            if (removed(this) || removed(this.parent)) return;
-            return that.insert_callback(this);
-          };
-        }
-      }
-      if (typeof (_base3 = el._browser.parent_done).replace === "function") {
-        if ((_ref4 = (_base4 = _base3.replace(el)).callback) == null) {
-          _base4.callback = function() {
-            if (removed(this) || removed(this.parent)) return;
-            return that.parent_done_callback(this);
-          };
-        }
-      }
-      return parent._browser.done.call(el._browser.parent_done.call);
-    };
-
-    BrowserAdapter.prototype.onreplace = function(oldtag, newtag) {
-      var cb, oldreplacerequest, that, _base, _base2, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7;
-      if (removed(oldtag) || removed(newtag)) return;
-      if ((_ref2 = newtag._browser) == null) newtag._browser = new BrowserState;
-      if ((_ref3 = oldtag._browser) != null) _ref3.mergeInto(newtag._browser);
-      this.onadd(oldtag.parent, newtag);
-      if ((_ref4 = oldtag._browser) != null) {
-        _ref4.destroy({
-          soft: true
-        });
-      }
-      newtag._browser.manip.reset();
-      while ((cb = newtag._browser.manip.callbacks.shift()) != null) {
-        this.animation.push(cb);
-      }
-      if (newtag._browser.insert === true) {
-        that = this;
-        oldreplacerequest = ((_ref5 = newtag._browser.replace) != null ? _ref5.callback : void 0) != null;
-        if ((_ref6 = (_base = newtag._browser).replace) == null) {
-          _base.replace = new Callback;
-        }
-        if ((_ref7 = (_base2 = newtag._browser.replace.replace(newtag)).callback) == null) {
-          _base2.callback = function() {
-            if (removed(this) || removed(this.parent)) return;
-            return that.replace_callback(oldtag, this);
-          };
-        }
-        if (!oldreplacerequest) {
-          return this.animation.push(newtag._browser.replace.call);
-        }
-      }
-    };
-
-    BrowserAdapter.prototype.ontext = function(el, text) {
-      var _this = this;
-      return this.animation.push(prepare_cancelable_manip(el, true).call(function() {
-        return _this.fn.text(el, text);
-      }));
-    };
-
-    BrowserAdapter.prototype.onraw = function(el, html) {
-      var _this = this;
-      return this.animation.push(prepare_cancelable_manip(el, true).call(function() {
-        return _this.fn.raw(el, html);
-      }));
-    };
-
-    BrowserAdapter.prototype.onattr = function(el, key, value) {
-      var _this = this;
-      return this.animation.push(prepare_cancelable_manip(el, true).call(function() {
-        return _this.fn.attr(el, key, value);
-      }));
-    };
-
-    BrowserAdapter.prototype.onshow = function(el) {
-      return this.fn.show(el);
-    };
-
-    BrowserAdapter.prototype.onhide = function(el) {
-      return this.fn.hide(el);
-    };
-
-    BrowserAdapter.prototype.onremove = function(el, opts) {
-      var _ref2;
-      this.fn.remove(el, opts);
-      if ((_ref2 = el._browser) != null) _ref2.destroy(opts);
-      if (!opts.soft) return delete el._browser;
-    };
-
-    BrowserAdapter.prototype.insert_callback = function(el) {
-      var _base;
-      if (el === el.builder && el.isempty) {
-        el._browser.wrapped = true;
-        this.createPlaceholder(el);
-      }
-      this.fn.add(el.parent, el);
-      if (el.parent._browser.wrapped) {
-        el.parent._browser.wrapped = false;
-        this.removePlaceholder(el.parent);
-      }
-      if (typeof (_base = el._browser).ready === "function") _base.ready(el);
-      el._browser.ready = true;
-      return el._browser.insert = true;
-    };
-
-    BrowserAdapter.prototype.parent_done_callback = function(el) {
-      var bool, _base, _ref2, _ref3, _ref4, _ref5;
-      if (el.parent === el.parent.builder) {
-        bool = !(el.parent.parent != null) || (el.parent.parent === ((_ref2 = el.parent.parent) != null ? _ref2.builder : void 0) && ((_ref3 = el.parent.parent) != null ? (_ref4 = _ref3._browser) != null ? _ref4.insert : void 0 : void 0) === true);
-        if (bool && ((_ref5 = el.parent._browser) != null ? _ref5.insert : void 0) === true) {
-          this.animation.push(el._browser.insert.call);
-        } else {
-          if (typeof (_base = el._browser.insert).call === "function") {
-            _base.call();
-          }
-        }
-      } else {
-        this.animation.push(el._browser.insert.call);
-      }
-      return el._browser.parent_done = true;
-    };
-
-    BrowserAdapter.prototype.replace_callback = function(oldtag, newtag) {
-      if (newtag === newtag.builder && newtag.isempty) {
-        newtag._browser.wrapped = true;
-        this.createPlaceholder(newtag);
-      }
-      this.fn.replace(oldtag, newtag);
-      return newtag._browser.replace = null;
-    };
-
-    return BrowserAdapter;
-
-  })();
-
-  module.exports = {
-    Adapter: BrowserAdapter,
-    fn: defaultfn
-  };
-
-}).call(this);
-
-});
-
-require.define("/node_modules/dt-browser/node_modules/animation/package.json", function (require, module, exports, __dirname, __filename) {
-    module.exports = {"name":"animation","description":"animation timing & handling","version":"0.1.2","homepage":"https://github.com/dodo/node-animation","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/node-animation.git"},"main":"animation.js","engines":{"node":">= 0.4.x"},"keywords":["request","animation","frame","interval","node","browser"],"scripts":{"prepublish":"cake build"},"dependencies":{"ms":">= 0.1.0","request-animation-frame":">= 0.1.0"},"devDependencies":{"muffin":">= 0.2.6","coffee-script":">= 1.1.2"}}
-});
-
-require.define("/node_modules/dt-browser/node_modules/animation/animation.js", function (require, module, exports, __dirname, __filename) {
+require.define("/node_modules/animation/animation.js", function (require, module, exports, __dirname, __filename) {
     
 module.exports = require('./lib/animation')
 
 });
 
-require.define("/node_modules/dt-browser/node_modules/animation/lib/animation.js", function (require, module, exports, __dirname, __filename) {
+require.define("/node_modules/animation/lib/animation.js", function (require, module, exports, __dirname, __filename) {
     (function() {
-  var EventEmitter, cancelAnimationFrame, ms, now, requestAnimationFrame, _ref, _ref2;
+  var EventEmitter, cancelAnimationFrame, ms, now, requestAnimationFrame, _ref;
   var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
   EventEmitter = require('events').EventEmitter;
@@ -823,7 +581,7 @@ require.define("/node_modules/dt-browser/node_modules/animation/lib/animation.js
 
   ms = require('ms');
 
-  now = (_ref2 = Date.now) != null ? _ref2 : function() {
+  now = function() {
     return new Date().getTime();
   };
 
@@ -832,14 +590,14 @@ require.define("/node_modules/dt-browser/node_modules/animation/lib/animation.js
     __extends(Animation, EventEmitter);
 
     function Animation(opts) {
-      var _ref3, _ref4, _ref5;
+      var _ref2, _ref3, _ref4;
       if (opts == null) opts = {};
       this.nextTick = __bind(this.nextTick, this);
-      this.timoutexecutiontime = ms((_ref3 = opts.timeoutexecution) != null ? _ref3 : '32ms');
-      this.executiontime = ms((_ref4 = opts.execution) != null ? _ref4 : '8ms');
+      this.timoutexecutiontime = ms((_ref2 = opts.timeoutexecution) != null ? _ref2 : 20);
+      this.executiontime = ms((_ref3 = opts.execution) != null ? _ref3 : 5);
       this.timeouttime = opts.timeout;
       if (this.timeouttime != null) this.timeouttime = ms(this.timeouttime);
-      this.autotoggle = (_ref5 = opts.toggle) != null ? _ref5 : false;
+      this.autotoggle = (_ref4 = opts.toggle) != null ? _ref4 : false;
       this.frametime = opts.frame;
       if (this.frametime != null) this.frametime = ms(this.frametime);
       this.queue = [];
@@ -848,16 +606,12 @@ require.define("/node_modules/dt-browser/node_modules/animation/lib/animation.js
       Animation.__super__.constructor.apply(this, arguments);
     }
 
-    Animation.prototype.need_next_tick = function() {
-      return this.running && !this.paused && (this.queue.length || !this.autotoggle);
-    };
-
     Animation.prototype.work_queue = function(started, dt, executiontime) {
       var t, _base, _results;
       t = now();
       _results = [];
       while (this.queue.length && t - started < executiontime) {
-        if (typeof (_base = this.queue.shift()) === "function") _base(dt);
+        if (typeof (_base = this.queue.shift()) === "function") _base();
         _results.push(t = now());
       }
       return _results;
@@ -869,15 +623,18 @@ require.define("/node_modules/dt-browser/node_modules/animation/lib/animation.js
     };
 
     Animation.prototype.nextTick = function(callback) {
-      var request, t, tick, timeout, _ref3;
-      _ref3 = [null, null], timeout = _ref3[0], request = _ref3[1];
+      var request, t, tick, timeout, _ref2;
+      _ref2 = [null, null], timeout = _ref2[0], request = _ref2[1];
       t = now();
       tick = function(success) {
-        var dt, executiontime, nextid, started;
-        if (this.need_next_tick()) nextid = this.nextTick();
+        var dt, executiontime, started;
         started = now();
         dt = started - t;
-        executiontime = success ? this.executiontime : this.timoutexecutiontime;
+        if (success) {
+          executiontime = this.executiontime;
+        } else {
+          executiontime = this.timoutexecutiontime;
+        }
         if (success) {
           clearTimeout(timeout);
         } else {
@@ -886,29 +643,38 @@ require.define("/node_modules/dt-browser/node_modules/animation/lib/animation.js
         this.emit('tick', dt);
         if (typeof callback === "function") callback(dt);
         this.work_queue(started, dt, executiontime);
-        if (nextid == null) return;
-        if (!this.need_next_tick()) {
-          if (this.timeouttime != null) clearTimeout(nextid.timeout);
-          cancelAnimationFrame(nextid);
-          this.pause();
+        if (this.running && !this.paused) {
+          if (this.queue.length) {
+            return this.nextTick();
+          } else {
+            if (this.autotoggle) {
+              return this.pause();
+            } else {
+              return this.nextTick();
+            }
+          }
         }
       };
       request = requestAnimationFrame(tick.bind(this, true), this.frametime);
       if (this.timeouttime != null) {
-        timeout = setTimeout(tick.bind(this, false), this.timeouttime);
-        request.timeout = timeout;
+        return timeout = setTimeout(tick.bind(this, false), this.timeouttime);
       }
-      return request;
     };
 
     Animation.prototype.start = function() {
       if (this.running) return;
       this.running = true;
       this.emit('start');
-      if (!this.paused && this.autotoggle && !this.queue.length) {
-        return this.pause();
-      } else {
-        return this.nextTick();
+      if (!this.paused) {
+        if (this.autotoggle) {
+          if (this.queue.length) {
+            return this.nextTick();
+          } else {
+            return this.pause();
+          }
+        } else {
+          return this.nextTick();
+        }
       }
     };
 
@@ -1116,34 +882,28 @@ EventEmitter.prototype.listeners = function(type) {
 
 });
 
-require.define("/node_modules/dt-browser/node_modules/animation/node_modules/request-animation-frame/package.json", function (require, module, exports, __dirname, __filename) {
-    module.exports = {"name":"request-animation-frame","description":"requestAnimationFrame shim","version":"0.1.1","homepage":"https://github.com/dodo/requestAnimationFrame.js","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/requestAnimationFrame.js.git"},"main":"shim.js","engines":{"node":">= 0.4.x"},"keywords":["request","animation","frame","shim","browser","polyfill"],"scripts":{"prepublish":"cake build"},"devDependencies":{"muffin":">= 0.2.6","coffee-script":">= 1.1.2"}}
+require.define("/node_modules/animation/node_modules/request-animation-frame/package.json", function (require, module, exports, __dirname, __filename) {
+    module.exports = {"name":"request-animation-frame","description":"requestAnimationFrame shim","version":"0.1.0","homepage":"https://github.com/dodo/requestAnimationFrame.js","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/requestAnimationFrame.js.git"},"main":"shim.js","engines":{"node":">= 0.4.x"},"keywords":["request","animation","frame","shim","browser","polyfill"],"scripts":{"prepublish":"cake build"},"devDependencies":{"muffin":">= 0.2.6","coffee-script":">= 1.1.2"}}
 });
 
-require.define("/node_modules/dt-browser/node_modules/animation/node_modules/request-animation-frame/shim.js", function (require, module, exports, __dirname, __filename) {
+require.define("/node_modules/animation/node_modules/request-animation-frame/shim.js", function (require, module, exports, __dirname, __filename) {
     
 module.exports = require('./lib/shim')
 
 });
 
-require.define("/node_modules/dt-browser/node_modules/animation/node_modules/request-animation-frame/lib/shim.js", function (require, module, exports, __dirname, __filename) {
+require.define("/node_modules/animation/node_modules/request-animation-frame/lib/shim.js", function (require, module, exports, __dirname, __filename) {
     (function() {
-  var max, now, _ref, _ref2;
+  var _ref;
 
-  now = (_ref = Date.now) != null ? _ref : function() {
-    return new Date().getTime();
-  };
-
-  max = Math.max;
-
-  _ref2 = (function() {
-    var cancel, isNative, last, request, vendor, _i, _len, _ref2;
+  _ref = (function() {
+    var cancel, isNative, last, request, vendor, _i, _len, _ref;
     last = 0;
     request = typeof window !== "undefined" && window !== null ? window.requestAnimationFrame : void 0;
     cancel = typeof window !== "undefined" && window !== null ? window.cancelAnimationFrame : void 0;
-    _ref2 = ["webkit", "moz", "o", "ms"];
-    for (_i = 0, _len = _ref2.length; _i < _len; _i++) {
-      vendor = _ref2[_i];
+    _ref = ["webkit", "moz", "o", "ms"];
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      vendor = _ref[_i];
       if (cancel == null) {
         cancel = (typeof window !== "undefined" && window !== null ? window["" + vendor + "cancelAnimationFrame"] : void 0) || (typeof window !== "undefined" && window !== null ? window["" + vendor + "cancelRequestAnimationFrame"] : void 0);
       }
@@ -1155,8 +915,8 @@ require.define("/node_modules/dt-browser/node_modules/animation/node_modules/req
     request = request != null ? request : function(callback, timeout) {
       var cur, id, time;
       if (timeout == null) timeout = 16;
-      cur = now();
-      time = max(0, timeout + last - cur);
+      cur = new Date().getTime();
+      time = Math.max(0, timeout + last - cur);
       id = setTimeout(function() {
         return typeof callback === "function" ? callback(cur + time) : void 0;
       }, time);
@@ -1170,17 +930,17 @@ require.define("/node_modules/dt-browser/node_modules/animation/node_modules/req
     };
     cancel.isNative = isNative;
     return [request, cancel];
-  })(), this.requestAnimationFrame = _ref2[0], this.cancelAnimationFrame = _ref2[1];
+  })(), this.requestAnimationFrame = _ref[0], this.cancelAnimationFrame = _ref[1];
 
 }).call(this);
 
 });
 
-require.define("/node_modules/dt-browser/node_modules/animation/node_modules/ms/package.json", function (require, module, exports, __dirname, __filename) {
+require.define("/node_modules/animation/node_modules/ms/package.json", function (require, module, exports, __dirname, __filename) {
     module.exports = {"name":"ms","version":"0.1.0","description":"Tiny ms conversion utility","main":"./ms","devDependencies":{"mocha":"*","expect.js":"*","serve":"*"}}
 });
 
-require.define("/node_modules/dt-browser/node_modules/animation/node_modules/ms/ms.js", function (require, module, exports, __dirname, __filename) {
+require.define("/node_modules/animation/node_modules/ms/ms.js", function (require, module, exports, __dirname, __filename) {
     /**
 
 # ms.js
@@ -1216,251 +976,6 @@ No more painful `setTimeout(fn, 60 * 4 * 3 * 2 * 1 * Infinity * NaN * '☃')`.
 
   g.top ? g.ms = ms : module.exports = ms;
 })(this);
-
-});
-
-require.define("/node_modules/dt-browser/lib/util.js", function (require, module, exports, __dirname, __filename) {
-    (function() {
-  var Callback, CancelableCallbacks, DeferredCallbacks, removed;
-  var __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
-
-  Callback = (function() {
-
-    function Callback() {
-      this.call = __bind(this.call, this);      this.callback = null;
-      this.that = null;
-    }
-
-    Callback.prototype.use = function(callback) {
-      this.callback = callback;
-      return this;
-    };
-
-    Callback.prototype.replace = function(that) {
-      this.that = that;
-      return this;
-    };
-
-    Callback.prototype.call = function() {
-      var _ref;
-      if (this.that != null) {
-        return (_ref = this.callback) != null ? _ref.apply(this.that, arguments) : void 0;
-      }
-    };
-
-    return Callback;
-
-  })();
-
-  CancelableCallbacks = (function() {
-
-    function CancelableCallbacks(canceled) {
-      this.canceled = canceled != null ? canceled : false;
-      this.call = __bind(this.call, this);
-      this.callbacks = [];
-    }
-
-    CancelableCallbacks.prototype.cancel = function() {
-      return this.canceled = true;
-    };
-
-    CancelableCallbacks.prototype.reset = function() {
-      return this.canceled = false;
-    };
-
-    CancelableCallbacks.prototype.call = function(callback) {
-      var _this = this;
-      return function() {
-        if (_this.canceled) {
-          return _this.callbacks.push(callback);
-        } else {
-          return typeof callback === "function" ? callback.apply(null, arguments) : void 0;
-        }
-      };
-    };
-
-    return CancelableCallbacks;
-
-  })();
-
-  DeferredCallbacks = (function() {
-
-    function DeferredCallbacks() {
-      this.call = __bind(this.call, this);      this.reset();
-    }
-
-    DeferredCallbacks.prototype.reset = function() {
-      this.callbacks = [];
-      this.allowed = null;
-      return this.done = false;
-    };
-
-    DeferredCallbacks.prototype.complete = function() {
-      this.callbacks = null;
-      this.allowed = null;
-      return this.done = true;
-    };
-
-    DeferredCallbacks.prototype.callback = function() {
-      var callback;
-      var _this = this;
-      if (this.done) return (function() {});
-      callback = function() {
-        var cb;
-        if (callback === _this.allowed) {
-          while ((cb = _this.callbacks.shift()) != null) {
-            if (typeof cb === "function") cb.apply(null, arguments);
-          }
-          return _this.complete();
-        }
-      };
-      this.allowed = callback;
-      return callback;
-    };
-
-    DeferredCallbacks.prototype.call = function(callback) {
-      if (this.done) return typeof callback === "function" ? callback() : void 0;
-      return this.callbacks.push(callback);
-    };
-
-    return DeferredCallbacks;
-
-  })();
-
-  removed = function(el) {
-    return el.closed === "removed";
-  };
-
-  module.exports = {
-    Callback: Callback,
-    CancelableCallbacks: CancelableCallbacks,
-    DeferredCallbacks: DeferredCallbacks,
-    removed: removed
-  };
-
-}).call(this);
-
-});
-
-require.define("/fn.js", function (require, module, exports, __dirname, __filename) {
-    (function() {
-  var isArray;
-  var __slice = Array.prototype.slice;
-
-  isArray = Array.isArray;
-
-  module.exports = {
-    add: function(parent, el) {
-      var $el, $par, $parpar, e, i, _i, _j, _k, _l, _len, _len2, _len3, _len4, _ref, _ref2, _ref3, _ref4, _ref5, _results, _results2, _results3, _results4;
-      console.log("----------------------------", parent._browser.insert === true);
-      $par = parent._dom;
-      $el = el._dom;
-      if (parent === parent.builder) {
-        console.log("par builder", parent.toString(), el.toString());
-        $par.push($el);
-        i = $par.length - 1;
-        if (parent._browser.wrapped) {
-          parent._browser.wrapped = false;
-          console.log("wrapped");
-          if ((_ref = $par[0].parentElement) != null) {
-            _ref.replaceWith($el, $par[0]);
-          }
-          if (parent.parent === ((_ref2 = parent.parent) != null ? _ref2.builder : void 0)) {
-            console.log("parpar builder", parent.parent);
-            $parpar = (_ref3 = parent.parent) != null ? _ref3._dom : void 0;
-            return $parpar != null ? $parpar.splice.apply($parpar, [$parpar.indexOf($par), i + 1].concat(__slice.call($par))) : void 0;
-          } else {
-            console.log("shift", $par);
-            _results = [];
-            for (_i = 0, _len = $el.length; _i < _len; _i++) {
-              e = $el[_i];
-              _results.push($par.appendChild(e));
-            }
-            return _results;
-          }
-        } else if (parent._browser.insert === true) {
-          console.log("insert is true", i, parent.toString(), el.toString());
-          if (parent.parent === ((_ref4 = parent.parent) != null ? _ref4.builder : void 0)) {
-            $parpar = (_ref5 = parent.parent) != null ? _ref5._dom : void 0;
-            i = $par.length - 1;
-            if (isArray($el)) {
-              _results2 = [];
-              for (_j = 0, _len2 = $el.length; _j < _len2; _j++) {
-                e = $el[_j];
-                _results2.push($parpar[0].parentElement.insertBefore(e, $parpar[i]));
-              }
-              return _results2;
-            } else {
-              return $parpar[0].parentElement.insertBefore($el, $parpar[i]);
-            }
-          } else {
-            if (isArray($el)) {
-              _results3 = [];
-              for (_k = 0, _len3 = $el.length; _k < _len3; _k++) {
-                e = $el[_k];
-                _results3.push($par[0].parentElement.insertBefore(e, $par[i]));
-              }
-              return _results3;
-            } else {
-              return $par[0].parentElement.insertBefore($el, $par[i]);
-            }
-          }
-        }
-      } else {
-        console.log("append", parent.toString(), el.toString(), $el.length, $el, isArray($el));
-        if (isArray($el)) {
-          _results4 = [];
-          for (_l = 0, _len4 = $el.length; _l < _len4; _l++) {
-            e = $el[_l];
-            _results4.push($par.appendChild(e));
-          }
-          return _results4;
-        } else {
-          return $par.appendChild($el);
-        }
-      }
-    },
-    replace: function(oldtag, newtag) {
-      var $new, $old, $par, parent;
-      parent = newtag.parent;
-      $new = newtag._jquery;
-      $old = oldtag._jquery;
-      $par = parent._jquery;
-      if (parent === parent.builder) {
-        return $par.splice($par.indexOf($old), 1, $new);
-      } else {
-        return $par.replaceChild($new, $old);
-      }
-    },
-    remove: function(el, opts) {
-      var $el, $par, parent;
-      parent = el.parent;
-      $par = parent._dom;
-      $el = el._dom;
-      if (parent === parent.builder) {
-        return $par.splice($par.indexOf($el), 1);
-      } else {
-        return $par.removeChild($el);
-      }
-    },
-    text: function(el, text) {
-      return el._dom.textContent = text;
-    },
-    raw: function(el, html) {
-      return el._dom.innerHTML = raw;
-    },
-    attr: function(el, key, value) {
-      if (value === void 0) {
-        return el._dom.removeAttribute(key);
-      } else {
-        return el._dom.setAttribute(key, value);
-      }
-    },
-    show: function(el) {},
-    hide: function(el) {}
-  };
-
-}).call(this);
 
 });
 ;require('./dt-dom');}).call(this);
