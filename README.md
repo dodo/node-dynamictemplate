@@ -163,11 +163,11 @@ For more information look at the various examples and plugins supporting Δt:
 
 ### Plugins
 
- * [Δt compiler](https://github.com/dodo/node-dt-compiler) - this compiles static HTML (like mockup files from a designer) to template masks.
- * [Δt stream adapter](https://github.com/dodo/node-dt-stream) - this lets you use node's beloved Stream to get static HTML from the templates.
- * [Δt jquery adapter](https://github.com/dodo/node-dt-jquery) - this lets you insert the template into dom with the help of [jQuery](http://jquery.com/).
- * [Δt list](https://github.com/dodo/node-dt-list) - this gives all you need to handle an ordered list of tags.
- * [Δt selector](https://github.com/dodo/node-dt-selector) - this gives you specific selected tags without modifing the template.
+ * [Δt compiler](http://dodo.github.com/node-dt-compiler) - this compiles static HTML (like mockup files from a designer) to template masks.
+ * [Δt stream adapter](http://dodo.github.com/node-dt-stream) - this lets you use node's beloved Stream to get static HTML from the templates.
+ * [Δt jquery adapter](http://dodo.github.com/node-dt-jquery) - this lets you insert the template into dom with the help of [jQuery](http://jquery.com/).
+ * [Δt list](http://dodo.github.com/node-dt-list) - this gives all you need to handle an ordered list of tags.
+ * [Δt selector](http://dodo.github.com/node-dt-selector) - this gives you specific selected tags without modifing the template.
 
 
 [![Build Status](https://secure.travis-ci.org/dodo/node-dynamictemplate.png)](http://travis-ci.org/dodo/node-dynamictemplate)
