@@ -125,14 +125,16 @@ Let's have another example:
 function template(view) {
     return new Template({schema:5}, function () {
         this.$div({class:'user'}, function () {
-            var name = this.$a({class:'name'});
-            var about = this.$span({class:'about'});
+            var name = this.a({class:'name'});
+            var about = this.span({class:'about'});
             view.on('set user', function setUser(user) {
                 name.text(user.name);
                 name.attr('href', user.url);
                 about.text(user.description);
             });
             setUser(view.currentUser);
+            about.end();
+            name.end();
         });
     });
 }
@@ -142,14 +144,16 @@ function template(view) {
 template = (view) ->
     new Template schema:5, ->
         @$div class:'user', ->
-            name = @$a(class:'name')
-            about = @$span(class:'about')
+            name = @a(class:'name')
+            about = @span(class:'about')
             setUser = (user) ->
                 name.text(user.name)
                 name.attr(href:user.url)
                 about.text(user.description)
             view.on('set user', setUser)
             setUser(view.currentUser)
+            about.end()
+            name.end()
 
 ```
 
