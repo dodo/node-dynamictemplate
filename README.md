@@ -122,6 +122,20 @@ For more information on the events look at [asyncxml](http://dodo.github.com/nod
 Let's have another example:
 
 ```javascript
+function template(view) {
+    return new Template({schema:5}, function () {
+        this.$div({class:'user'}, function () {
+            var name = this.$a({class:'name'});
+            var about = this.$span({class:'about'});
+            view.on('set user', function setUser(user) {
+                name.text(user.name);
+                name.attr('href', user.url);
+                about.text(user.description);
+            });
+            setUser(view.currentUser);
+        });
+    });
+}
 ```
 
 ```coffeescript
@@ -133,7 +147,7 @@ template = (view) ->
             setUser = (user) ->
                 name.text(user.name)
                 name.attr(href:user.url)
-                abouot.text(user.description)
+                about.text(user.description)
             view.on('set user', setUser)
             setUser(view.currentUser)
 
