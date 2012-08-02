@@ -52,7 +52,7 @@ These are the reasons why jquery and mootools are still the most used js librari
 
 So let's try something new:
 
-``´javascript
+```javascript
 var Template = require('dynamictemplate').Template;
 var tpl = new Template({schema:'html5'}, function () {
     this.div(function () {
@@ -103,7 +103,7 @@ template = (view) ->
 Ok. let me explain: we created a div which text changes on every 'set title' event the view object will emit and we created an anchor element which `href` attribute will change on every 'navigate' event. that's it.
 note that the div element will be empty at the beginning.
 if you play a while with it you might hit some known problems from nodejs: flow control. how convenient that it seems that nearly everybody has writting her own library. **Use your own flow control library!**
-if you don't know any, [async]() might be a good fit.
+if you don't know any, [async](https://github.com/caolan/async#readme) might be a good fit.
 
 if you already started playing around with it you might found out that nothing is happing. Its because each `this.div` call doesn't produce a div tag but a `new` and a `add` event with the object representation of the div tag as argument. Doesn't sound very useful to you? how about you use one of the many adapters? An Adapter is little modules that listens for these events and act accordingly on its domain. This means if you use dt-jquery or dt-dom it will create a dom element. in the case of dt-stream it will create a nodejs stream instance that emits html strings as data.
 
@@ -117,7 +117,7 @@ tpl = domify(template(view));
 var streamify = require('dt-stream');
 tpl = streamify(template(view));
 ```
-For more information on the events look at [asyncxml]() which generates them.
+For more information on the events look at [asyncxml](http://dodo.github.com/node-asyncxml/) which generates them.
 
 Let's have another example:
 
