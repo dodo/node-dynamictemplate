@@ -16,96 +16,141 @@ It works in browsers too.
 $ npm install dynamictemplate
 ```
 
+## Solutions
+
+if any of this problems are familiar to you, you should skip the tl;dr and read the documentation:
+
+ * building a real-time user interface
+ * updating large chunks of DOM
+ * manipulating nested DOM structures
+ * working with a designer
+ * isomorph code
+ * html streaming
+
+
+## TL;DR
+
+Convenient DOM manipulation in template style for real-time user interfaces.
+
+ * async & dynamic → changeable even after template was rendered
+ * pure javascript with a hugh event based api → modular & extendable
+ * runs on server and browser side
+ * different approach than dom: don't get your elements out of the black box. keep only those which you need.
+ * minimalistic (all the other stuff is hidden in modules :P)
+
 ## Documentation
 
-### Writing templates
 
-```coffeescript
-tpl = new Template schema:'xml', doctype:off, pretty:off, encoding:'utf-8', end:on, -> # default settings
-    @$tag 'xml', ->
-        @$tag 'child', "content"
+Writing and maintaining user interfaces can be hard.
+
+Δt is this new event based way of writing and maintaining user interfaces in javascript.
+
+DOM has growen old. It's one of the legacies from the last millenium each browser caries with it.
+Like nearly every browser API, the DOM has an ,opinionated, ugly interface to work with:
+the fastest way to fill a DOM is `innerHTML`, the way to get stuff back once its parsed is by querying it, the convenient way to manipulate it is by changing, creating and removing nodes. so WTF.
+These are the reasons why jquery and mootools are still the most used js libraries. but seriously, have you every tried to write an large userinterface with it?
+
+So let's try something new:
+
+``´javascript
+var Template = require('dynamictemplate').Template;
+var tpl = new Template({schema:'html5'}, function () {
+    this.div(function () {
+        this.text("hello world");
+        this.end();
+    });
+});
 ```
 
-This actually allows you to write real templates with [asyncxml](https://github.com/dodo/node-asyncxml).
-Normally, asyncxml just gives you the ability to write asynchronous XML-generating code.
-
-### How to write tags
-
-Maybe the main difference to some other template engines is that all the tags are asynchronous.
-This has the side effect that every tag has to be closed manually. As this can get a little bit anoying when you write very large templates, I added a little shortcut which invokes the end for you at the and of the child scope:
-
 ```coffeescript
-@html ->
-    @body("content").end()
-    @end()
-
-# is the exactly same as
-
-@$html ->
-    @$body "content"
+{ Template } = require 'dynamictemplate'
+tpl = new Template schema:'html5', ->
+    @div ->
+        @text "hello world"
+        @end()
 ```
 
-Just add a dollar sign (`$`) in front of the tag method and it acts a little bit more synchronous again.
+That was easy. We created a new template instance and with it a new `<div>` element with some text and closed it.
+
+Let's try something more complex:
+
+```javascipt
+function template(view) {
+    return new Template({schema:5}, function () {
+        this.$div(function () {
+            view.on('set title', this.text);
+        });
+        this.$a(function () {
+            this.text("back");
+            view.on('navigate', function (url) {
+                this.attr('href', url);
+            }.bind(this));
+        });
+    });
+}
+```
+
+```coffeescript
+template = (view) ->
+     new Template schema:'5', ->
+        @$div ->
+            view.on('set title', @text)
+        @$a href:'/', ->
+            @text "back"
+            view.on('navigate', (url) => @attr(href:url))
+```
+
+Ok. let me explain: we created a div which text changes on every 'set title' event the view object will emit and we created an anchor element which `href` attribute will change on every 'navigate' event. that's it.
+note that the div element will be empty at the beginning.
+if you play a while with it you might hit some known problems from nodejs: flow control. how convenient that it seems that nearly everybody has writting her own library. **Use your own flow control library!**
+if you don't know any, [async]() might be a good fit.
+
+if you already started playing around with it you might found out that nothing is happing. Its because each `this.div` call doesn't produce a div tag but a `new` and a `add` event with the object representation of the div tag as argument. Doesn't sound very useful to you? how about you use one of the many adapters? An Adapter is little modules that listens for these events and act accordingly on its domain. This means if you use dt-jquery or dt-dom it will create a dom element. in the case of dt-stream it will create a nodejs stream instance that emits html strings as data.
+
+```javascript
+var jqueryify = require('dt-jquery');
+tpl = jqueryify(template(view));
+// or
+var domify = require('dt-dom');
+tpl = domify(template(view));
+// or
+var streamify = require('dt-stream');
+tpl = streamify(template(view));
+```
+For more information on the events look at [asyncxml]() which generates them.
+
+Let's have another example:
+
+```javascript
+```
+
+```coffeescript
+template = (view) ->
+    new Template schema:5, ->
+        @$div class:'user', ->
+            name = @$a(class:'name')
+            about = @$span(class:'about')
+            setUser = (user) ->
+                name.text(user.name)
+                name.attr(href:user.url)
+                abouot.text(user.description)
+            view.on('set user', setUser)
+            setUser(view.currentUser)
+
+```
+
+Alright. here is the trick: unlike the DOM where you normally have to query most elements, which feels mostly like grabbing into a black box with spiders and snakes, with Δt you already created the tags, so store them in variables, scopes and/or closures when you need them.
+
+For more information look at the various examples and plugins supporting Δt:
 
 ### Plugins
 
- * [Δt compiler](https://github.com/dodo/node-dt-compiler) - this compiles static HTML to template masks.
+ * [Δt compiler](https://github.com/dodo/node-dt-compiler) - this compiles static HTML (like mockup files from a designer) to template masks.
  * [Δt stream adapter](https://github.com/dodo/node-dt-stream) - this lets you use node's beloved Stream to get static HTML from the templates.
  * [Δt jquery adapter](https://github.com/dodo/node-dt-jquery) - this lets you insert the template into dom with the help of [jQuery](http://jquery.com/).
  * [Δt list](https://github.com/dodo/node-dt-list) - this gives all you need to handle an ordered list of tags.
+ * [Δt selector](https://github.com/dodo/node-dt-selector) - this gives you specific selected tags without modifing the template.
 
-### The dynamic part
-
-    TODO i couldnt find the time to build an example
-    that's works best with dynamictemplate, so please stand by.
-
-
-#### Just FYI
-
-This is not finished yet.
-But please, make yourself comfortable, take a cookie and **start contributing**!
-
-
-## Example
-
-If you are familiar with [coffeekup](http://coffeekup.org), you should recognize this:
-
-```coffeescript
-stringify = (func) -> func.toString()
-shoutify = (s) -> s.toUpperCase() + "!"
-template = ({title, desc, path, user, max}) ->
-    new Template schema:5, doctype:on, ->
-        @$html ->
-            @$head ->
-                @$meta charset:'utf-8'
-                @$title "#{title or 'Untitled'} | My awesome website"
-                if desc?
-                    @$meta name:'description', content:desc
-                @$link rel:'stylesheet', href:'/stylesheets/app.css'
-                @$script src:'/javascripts/jquery.js'
-                @$script stringify -> # browser code
-                    $ ->
-                        alert "Alerts are so annoying..."
-        @$body ->
-            @$header ->
-                @$h1 title or 'Untitled'
-                @$nav ->
-                    @$ul ->
-                        unless path is '/'
-                            @$li -> @$a href:'/', "Home"
-                        @$li -> @$a href:'/chunky', "Bacon!"
-                        switch user.role
-                            when 'owner', 'admin'
-                                @$li -> @$a href:'/admin', "Secret Stuff"
-                            when 'vip'
-                                @$li -> @$a href:'/vip', "Exclusive Stuff"
-                            else
-                                @$li -> @$a href:'/commoners', "Just Stuff"
-            @$section ->
-                @$h2 "Let's count to #{max}:"
-                @$p "#{i}" for i in [1..max]
-            @$footer ->
-                @$p shoutify "bye"
-```
 
 [![Build Status](https://secure.travis-ci.org/dodo/node-dynamictemplate.png)](http://travis-ci.org/dodo/node-dynamictemplate)
+
