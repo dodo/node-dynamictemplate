@@ -74,7 +74,7 @@ That was easy. We created a new template instance and with it a new `<div>` elem
 
 Let's try something more complex:
 
-```javascipt
+```javascript
 function template(view) {
     return new Template({schema:5}, function () {
         this.$div(function () {
