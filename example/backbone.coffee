@@ -59,7 +59,7 @@ class BackboneExample extends Backbone.View
 
     # embbeded template
 
-    template: (view) -> jqueryify new Template schema:5, ->
+    template: (view) -> jqueryify use:List.jqueryify, new Template schema:5, ->
         @$div class:'controls', ->
 
             input this, 'button', "add", "collection.add({value:Math.random()})"
@@ -114,10 +114,12 @@ class BackboneExample extends Backbone.View
 
     on_add: EventHandler (ev) ->
         @model.add value:"#{random()}", r:random(), g:random(), b:random()
+        console.log "add", @model.length
 
     on_remove: EventHandler (ev) ->
         if(entry = @model.getByCid($(ev.target).data('cid')))?
             @model.remove(entry)
+        console.log "remove", @model.length
 
     on_desc: EventHandler (ev) ->
         @model.comparator = descending
