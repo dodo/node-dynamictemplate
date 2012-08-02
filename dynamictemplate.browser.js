@@ -347,7 +347,7 @@ require.define("/dynamictemplate.js", function (require, module, exports, __dirn
 });
 
 require.define("/node_modules/asyncxml/package.json", function (require, module, exports, __dirname, __filename) {
-    module.exports = {"name":"asyncxml","description":"async xml builder and generator","version":"0.4.2","homepage":"https://github.com/dodo/node-asyncxml","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/node-asyncxml.git"},"main":"asyncxml.js","engines":{"node":">= 0.4.x"},"keywords":["async","xml","generation","stream","browser"],"scripts":{"test":"cake build && nodeunit test","prepublish":"cake build"},"devDependencies":{"coffee-script":">= 1.1.2","muffin":">= 0.2.6","browserify":"1.6.1","scopify":">= 0.1.0","dt-stream":">= 0.1.1","nodeunit":">= 0.7.4"},"licenses":[{"type":"MIT","url":"http://github.com/dodo/node-asyncxml/raw/master/LICENSE"}]}
+    module.exports = {"name":"asyncxml","description":"async xml builder and generator","version":"0.4.5","homepage":"https://github.com/dodo/node-asyncxml","author":"dodo (https://github.com/dodo)","repository":{"type":"git","url":"git://github.com/dodo/node-asyncxml.git"},"main":"asyncxml.js","engines":{"node":">= 0.4.x"},"keywords":["async","xml","generation","stream","browser"],"scripts":{"test":"cake build && nodeunit test","prepublish":"cake build"},"devDependencies":{"coffee-script":">= 1.1.2","muffin":">= 0.2.6","browserify":"1.6.1","scopify":">= 0.1.0","dt-stream":">= 0.1.1","nodeunit":">= 0.7.4"},"licenses":[{"type":"MIT","url":"http://github.com/dodo/node-asyncxml/raw/master/LICENSE"}]}
 });
 
 require.define("/node_modules/asyncxml/asyncxml.js", function (require, module, exports, __dirname, __filename) {
@@ -373,12 +373,12 @@ require.define("/node_modules/asyncxml/lib/asyncxml.js", function (require, modu
 
 require.define("/node_modules/asyncxml/lib/xml.js", function (require, module, exports, __dirname, __filename) {
     (function() {
-  var Builder, EVENTS, EventEmitter, Tag, add_tag, connect_tags, deep_merge, new_attrs, new_tag, parse_args, safe, sync_tag, _ref;
+  var Builder, EVENTS, EventEmitter, Tag, add_tag, connect_tags, new_attrs, new_tag, parse_args, safe, sync_tag, _ref;
   var __slice = Array.prototype.slice, __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; }, __hasProp = Object.prototype.hasOwnProperty, __extends = function(child, parent) { for (var key in parent) { if (__hasProp.call(parent, key)) child[key] = parent[key]; } function ctor() { this.constructor = child; } ctor.prototype = parent.prototype; child.prototype = new ctor; child.__super__ = parent.prototype; return child; };
 
   EventEmitter = require('events').EventEmitter;
 
-  _ref = require('./util'), deep_merge = _ref.deep_merge, new_attrs = _ref.new_attrs, safe = _ref.safe;
+  _ref = require('./util'), new_attrs = _ref.new_attrs, safe = _ref.safe;
 
   EVENTS = ['add', 'attr', 'data', 'text', 'raw', 'show', 'hide', 'remove', 'replace', 'close'];
 
@@ -469,6 +469,8 @@ require.define("/node_modules/asyncxml/lib/xml.js", function (require, module, e
       var _ref2, _ref3;
       if ((_ref2 = tag.builder) == null) tag.builder = _this.builder;
       if ((_ref3 = tag.parent) == null) tag.parent = _this;
+      tag.builder.opts.pretty = _this.builder.opts.pretty;
+      tag.builder.level = _this.level;
       connect_tags(_this, tag);
       _this.emit('add', _this, tag);
       _this.emit('new', tag);
@@ -488,7 +490,9 @@ require.define("/node_modules/asyncxml/lib/xml.js", function (require, module, e
     var TagInstance, attrs, children, name, newtag, opts, _ref2, _ref3, _ref4, _ref5, _ref6, _ref7;
     _ref2 = parse_args.apply(null, arguments), name = _ref2[0], attrs = _ref2[1], children = _ref2[2], opts = _ref2[3];
     if ((_ref3 = opts.level) == null) opts.level = this.level + 1;
-    opts = deep_merge((_ref4 = (_ref5 = this.builder) != null ? _ref5.opts : void 0) != null ? _ref4 : {}, opts);
+    if ((_ref4 = opts.pretty) == null) {
+      opts.pretty = (_ref5 = this.builder) != null ? _ref5.opts.pretty : void 0;
+    }
     opts.builder = this.builder;
     TagInstance = (_ref6 = (_ref7 = this.builder) != null ? _ref7.Tag : void 0) != null ? _ref6 : Tag;
     newtag = new TagInstance(name, attrs, null, opts);
@@ -549,7 +553,8 @@ require.define("/node_modules/asyncxml/lib/xml.js", function (require, module, e
     Tag.prototype.attr = function(key, value) {
       var attr, k, v, _ref2;
       if (typeof key === 'string') {
-        if (!(value != null) && ((attr = (_ref2 = this.builder) != null ? _ref2.query('attr', this, key) : void 0) != null)) {
+        if (!(value != null)) {
+          attr = (_ref2 = this.builder) != null ? _ref2.query('attr', this, key) : void 0;
           if (attr !== void 0) this.attrs[key] = attr;
           return attr;
         }
@@ -752,6 +757,7 @@ require.define("/node_modules/asyncxml/lib/xml.js", function (require, module, e
       this.builder = this;
       this.checkers = {};
       this.closed = false;
+      this.isempty = true;
       if ((_ref2 = (_base = this.opts).pretty) == null) _base.pretty = false;
       this.level = (_ref3 = this.opts.level) != null ? _ref3 : -1;
       this.setMaxListeners(0);
@@ -1027,29 +1033,9 @@ EventEmitter.prototype.listeners = function(type) {
 
 require.define("/node_modules/asyncxml/lib/util.js", function (require, module, exports, __dirname, __filename) {
     (function() {
-  var breakline, deep_merge, indent, isArray, new_attrs, prettify, safe;
-  var __slice = Array.prototype.slice;
+  var breakline, indent, isArray, new_attrs, prettify, safe;
 
   isArray = Array.isArray;
-
-  deep_merge = function() {
-    var k, obj, objs, res, v, _i, _len;
-    objs = 1 <= arguments.length ? __slice.call(arguments, 0) : [];
-    if (isArray(objs[0])) objs = objs[0];
-    res = {};
-    for (_i = 0, _len = objs.length; _i < _len; _i++) {
-      obj = objs[_i];
-      for (k in obj) {
-        v = obj[k];
-        if (typeof v === 'object' && !isArray(v)) {
-          res[k] = deep_merge(res[k] || {}, v);
-        } else {
-          res[k] = v;
-        }
-      }
-    }
-    return res;
-  };
 
   indent = function(_arg) {
     var level, pretty;
@@ -1104,7 +1090,6 @@ require.define("/node_modules/asyncxml/lib/util.js", function (require, module, 
   };
 
   module.exports = {
-    deep_merge: deep_merge,
     prettify: prettify,
     indent: indent,
     new_attrs: new_attrs,
@@ -1168,6 +1153,7 @@ require.define("/template.js", function (require, module, exports, __dirname, __
       if (typeof opts === 'function') {
         _ref2 = [opts, {}], template = _ref2[0], opts = _ref2[1];
       }
+      this.opts = opts;
       if ((_ref3 = opts.encoding) == null) opts.encoding = 'utf-8';
       if ((_ref4 = opts.doctype) == null) opts.doctype = false;
       if ((_ref5 = opts.end) == null) opts.end = true;
