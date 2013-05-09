@@ -63,8 +63,8 @@ class BackboneExample extends Backbone.View
         @$div class:'controls', ->
 
             input this, 'button', "add", "collection.add({value:Math.random()})"
-            input this, 'button', "desc", "▲", title:"descending"
-            input this, 'button', "asc",  "▼", title:"ascending"
+            input this, 'button', "desc", "\u25B2", title:"descending"
+            input this, 'button', "asc",  "\u25BC", title:"ascending"
 
         @$ul class:'list', ->
             items = new List
