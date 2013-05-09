@@ -80,7 +80,7 @@ class BackboneExample extends Backbone.View
                         type:'button'
                         class:"remove control"
                         'data-cid':entry.cid
-                        value:"✖"
+                        value:"\u2716"
                         title:"delete"
                     @$p "#{entry.get 'value'}"
 
