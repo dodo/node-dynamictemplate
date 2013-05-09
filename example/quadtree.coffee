@@ -168,8 +168,8 @@ buildTree = (tag, path) -> return ->
 
 svg = domify new Template schema:5, ->
     @$div class:'controls', ->
-        button this, "start", "▸"
-        button this, "stop",  "■"
+        button this, "start", "\u25B8"
+        button this, "stop",  "\u25A0"
         @$a href:"#{srcdirurl}/quadtree.coffee", "Source Code"
     @$div class:'canvas', ->
         @add new Template schema:'svg', ->
