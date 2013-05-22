@@ -44,7 +44,6 @@ class Template extends EventEmitter
         opts.self_closing = self_closing[s]?(opts)
         # load tag list (xml schema)
         opts.schema = schema[s]?(opts).split(' ')
-
         # get builder class from options
         Builder = opts.Builder ? DefaultBuilder
         # create new builder class to extend it with a schema
@@ -85,22 +84,27 @@ class Template extends EventEmitter
 
         ##
         # start the templating process after user listened for events
-        process.nextTick =>
-            # load doctype if enabled
-            if opts.doctype is on
-                opts.doctype = 'html'
-            # resolve doctype name input
-            d = aliases[opts.doctype] or opts.doctype
-            # write doctype
-            if opts.doctype and (dt = doctype[d]?(opts))
-                dt += "\n" if opts.pretty
-                @xml.emit 'data', @xml, dt
-            # templating process ...
-            if typeof template is 'function'
-                template.call @xml
-                @end() if opts.end
-            else
-                @end(template)
+        @fun = template
+        return if opts.exec is off
+        process.nextTick @exec
+
+    exec: =>
+        opts = @opts
+        # load doctype if enabled
+        if opts.doctype is on
+            opts.doctype = 'html'
+        # resolve doctype name input
+        d = aliases[opts.doctype] or opts.doctype
+        # write doctype
+        if opts.doctype and (dt = doctype[d]?(opts))
+            dt += "\n" if opts.pretty
+            @xml.emit 'data', @xml, dt
+        # templating process ...
+        if typeof @fun is 'function'
+            @fun.call @xml
+            @end() if opts.end
+        else
+            @end(@fun)
 
     toString: ->
         "[object Template]"
