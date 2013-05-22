@@ -85,10 +85,10 @@ class Template extends EventEmitter
         ##
         # start the templating process after user listened for events
         @fun = template
-        return if opts.exec is off
-        process.nextTick @exec
+        return if opts.run is off
+        process.nextTick @run
 
-    exec: =>
+    run: =>
         opts = @opts
         # load doctype if enabled
         if opts.doctype is on
