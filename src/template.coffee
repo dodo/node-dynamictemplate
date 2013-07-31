@@ -38,6 +38,7 @@ class Template extends EventEmitter
         opts.end ?= on
         # schema
         schema_input = opts.schema
+        opts._schema = opts.schema
         # resolve schema name input
         s = aliases[schema_input] or schema_input or 'xml'
         # load self closing schema
@@ -92,7 +93,7 @@ class Template extends EventEmitter
         opts = @opts
         # load doctype if enabled
         if opts.doctype is on
-            opts.doctype = 'html'
+            opts.doctype = opts._schema or 'html'
         # resolve doctype name input
         d = aliases[opts.doctype] or opts.doctype
         # write doctype
