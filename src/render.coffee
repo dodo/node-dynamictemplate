@@ -10,7 +10,8 @@ render = (template) ->
         encoding:'utf-8' # FIXME use template.options.encoding
         size:'flexible'
         disabled:yes
-    streamify(template).stream.pipe(buffer)
+    streamify(template).stream.pipe(buffer).once 'close', ->
+        template.remove() # prevent memory leak
     return buffer
 
 # exports
