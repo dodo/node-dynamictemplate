@@ -84,6 +84,8 @@ class Template extends EventEmitter
 
     remove: =>
         @xml.remove arguments...
+        @xml.template = null
+        @xml = null
 
     end: =>
         @xml.end arguments...
