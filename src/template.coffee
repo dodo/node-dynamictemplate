@@ -55,12 +55,11 @@ class Template extends EventEmitter
 
         ##
         # start the templating process after user listened for events
-        @fun = template
+        @run = @run.bind(this, template, opts)
         return if opts.run is off
         process.nextTick @run
 
-    run: =>
-        opts = @opts
+    run: (template, opts) ->
         # load doctype if enabled
         if opts.doctype is on
             opts.doctype = opts._schema or 'html'
@@ -71,11 +70,11 @@ class Template extends EventEmitter
             dt += "\n" if opts.pretty
             @xml.emit 'data', @xml, dt
         # templating process ...
-        if typeof @fun is 'function'
-            @fun.call @xml
+        if typeof template is 'function'
+            template.call @xml
             @end() if opts.end
         else
-            @end(@fun)
+            @end(template)
 
     toString: ->
         "[object Template]"
