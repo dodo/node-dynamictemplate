@@ -13,8 +13,8 @@ pp = (proto, name) -> # populate tag with specific child tag genertor
     return
 
 ff = (proto, tags) -> # fill with tags
-    for tagname in tags
-        pp proto, tagname if tagname
+    for tagname in tags when tagname
+        pp proto, tagname
     return
 
 
@@ -25,6 +25,7 @@ get = (key, opts) ->
     # set Tag class so we get the same results like create(…)
     xml.Tag = xml.opts.Tag = cache[key].Tag
     return xml
+
 
 create = (key, opts) ->
     # get builder class from options
@@ -54,9 +55,6 @@ lookup = (opts) ->
         get key, opts
     else
         create key, opts
-
-
-
 
 
 clear = () ->
