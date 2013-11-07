@@ -1,8 +1,8 @@
 { EventEmitter } = require 'events'
-{ Builder:DefaultBuilder } = require 'asyncxml'
 { schema, self_closing } = require './schema'
 { doctype } = require './doctype'
 { aliases } = require './alias'
+{ lookup, clear } = require './cache'
 
 EVENTS = [
     'new','add'
@@ -13,46 +13,25 @@ EVENTS = [
 ]
 
 
-##
-# i made these function name short ,
-# because its a little bit faster than with long names
-
-pp = (proto, name) -> # populate tag with specific child tag genertor
-    proto[    name] = -> @tag.apply  this, [name].concat arguments...
-    proto["$"+name] = -> @$tag.apply this, [name].concat arguments...
-
-ff = (proto, tags) -> # fill with tags
-    for tagname in tags
-        pp proto, tagname if tagname
-    return
-
-
 class Template extends EventEmitter
     constructor: (opts = {}, template) ->
         # options
         [template, opts] = [opts, {}] if typeof opts is 'function'
-        @opts = opts
         # defaults
         opts.encoding ?= 'utf-8'
         opts.doctype ?= off
         opts.end ?= on
         # schema
-        schema_input = opts.schema
         opts._schema = opts.schema
         # resolve schema name input
-        s = aliases[schema_input] or schema_input or 'xml'
+        s = aliases[opts._schema] or opts._schema or 'xml'
         # load self closing schema
         opts.self_closing = self_closing[s]?(opts)
         # load tag list (xml schema)
         opts.schema = schema[s]?(opts).split(' ')
-        # get builder class from options
-        Builder = opts.Builder ? DefaultBuilder
-        # create new builder class to extend it with a schema
-        class ExtendedBuilder extends Builder
-        # create tag method shortcuts defined by schema
-        ff ExtendedBuilder::, opts.schema
         # instantiate
-        @xml = new ExtendedBuilder opts
+        # lookup the cache to get a builder (and Tag class) patched with schema
+        @xml = lookup opts
         @xml.template = this
         # override query
         old_query = @xml.query
@@ -61,15 +40,6 @@ class Template extends EventEmitter
                 key.xml ? key
             else
                 old_query.call(this, type, tag, key)
-
-        # tag class is defined by builder
-        Tag = @xml.Tag
-        # create new tag class to extend it with a schema
-        class ExtendedTag extends Tag
-        # create tag method shortcuts defined by schema
-        ff ExtendedTag::, opts.schema
-        # write it back so builder can use it to instantiate a new tag
-        @xml.Tag = @xml.opts.Tag = ExtendedTag
 
         # add self closing tag behavior
         # some of the html tags dont need a closing tag
@@ -135,4 +105,5 @@ Template.schema = schema
 Template.doctype = doctype
 Template.self_closing = self_closing
 Template.aliases = aliases
+Template.clearCache = clear
 module.exports = Template
