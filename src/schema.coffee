@@ -1,6 +1,7 @@
 
 schema =
-    'xml'  : -> "" # allready includes tag
+    'none' : -> "" # allready includes tag
+    'xml'  : -> "#{do schema.none }"
     'html' : ->
         "#{do schema.xml } #{do schema['html-obsolete']} iframe label legend " +
         "#{do self_closing.html} html body div ul li a b body button colgroup "+
@@ -49,6 +50,7 @@ schema =
 # Valid self-closing HTML 5 elements.
 # set true when all tags are self closing
 self_closing =
+    'none': -> on
     'xml'  : -> off
     'svg1.1': -> on
     'html' : -> "area br col embed hr img input link meta param"

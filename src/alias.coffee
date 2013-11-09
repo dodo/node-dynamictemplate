@@ -2,8 +2,12 @@
 # schema aliases
 aliases =
     'default':'xml'
+    'null':'none'
+    'nil':'none'
+    '0':'none'
     '5':'html5'
     5:'html5'
+    0:'none'
     'ce':'html-ce'
     '1.1':'xhtml1.1'
     'html11':'xhtml1.1'

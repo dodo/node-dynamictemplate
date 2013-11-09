@@ -6,7 +6,7 @@ streamify = require 'dt-stream'
 module.exports =
 
     simple: (æ) ->
-        xml = streamify new Template ->
+        xml = streamify new Template schema:0, ->
             @$tag('test')
         check = "no data"
         xml.stream.on 'data', (tag) ->
