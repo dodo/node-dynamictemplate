@@ -41,17 +41,18 @@ class Template extends EventEmitter
             else
                 old_query.call(this, type, tag, key)
 
-        # add self closing tag behavior
-        # some of the html tags dont need a closing tag
-        @xml.register 'end', (tag, next) ->
-            unless opts.self_closing is on or opts.self_closing.match tag.name
-                tag.isempty = no
-            next(tag)
+        unless opts.self_closing is off
+            # add self closing tag behavior
+            # some of the html tags dont need a closing tag
+            @xml.register 'end', (tag, next) ->
+                return next(tag) unless tag.isselfclosing
+                if opts.self_closing is on or opts.self_closing.match tag.name
+                    tag.isempty = yes
+                next(tag)
 
         # pipe events through
         EVENTS.forEach (event) =>
-            @xml.on event, (args...) =>
-                @emit event, args...
+            @xml.on(event, @emit.bind(this, event))
 
         ##
         # start the templating process after user listened for events
