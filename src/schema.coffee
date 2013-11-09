@@ -49,7 +49,7 @@ schema =
 # Valid self-closing HTML 5 elements.
 # set true when all tags are self closing
 self_closing =
-    'xml'  : -> on
+    'xml'  : -> off
     'svg1.1': -> on
     'html' : -> "area br col embed hr img input link meta param"
     'html5': -> "#{do self_closing.html} base command keygen source track wbr"
