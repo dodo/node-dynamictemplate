@@ -12,8 +12,8 @@
     "prepublish": "cake build"}
 , "dependencies": {
     "bufferstream": ">= 0.6.0",
-    "dt-stream": ">= 0.1.2",
-    "asyncxml": ">= 0.4.5"}
+    "dt-stream": ">= 0.2.0",
+    "asyncxml": ">= 0.5.0"}
 , "devDependencies": {
     "browserify": "1.6.1",
     "scopify": ">= 0.2.1",
