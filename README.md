@@ -172,3 +172,7 @@ For more information look at the various examples and plugins supporting Δt:
 
 [![Build Status](https://secure.travis-ci.org/dodo/node-dynamictemplate.png)](http://travis-ci.org/dodo/node-dynamictemplate)
 
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/dodo/node-dynamictemplate/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
