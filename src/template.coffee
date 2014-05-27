@@ -18,6 +18,7 @@ class Template extends EventEmitter
         # options
         [template, opts] = [opts, {}] if typeof opts is 'function'
         # defaults
+        opts.run = off if opts.partial
         opts.encoding ?= 'utf-8'
         opts.doctype ?= off
         opts.end ?= on
@@ -74,7 +75,7 @@ class Template extends EventEmitter
         if typeof template is 'function'
             template.call @xml
             @end() if opts.end
-        else
+        else if opts.end
             @end(template)
 
     toString: ->
