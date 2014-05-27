@@ -40,6 +40,11 @@ create = (key, opts) ->
     Tag = xml.Tag
     # create new tag class to extend it with a schema
     class ExtendedTag extends Tag
+        partial: (partial) ->
+            return this unless partial.run? # tag should be already added then
+            @add(partial)
+            partial.run() # guess this is a template
+            return this
     # create tag method shortcuts defined by schema
     ff ExtendedTag::, opts.schema
     # write it back so builder can use it to instantiate a new tag
