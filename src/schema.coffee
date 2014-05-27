@@ -54,7 +54,7 @@ self_closing =
     'xml'  : -> off
     'svg1.1': -> on
     'html' : -> "area br col embed hr img input link meta param"
-    'html5': -> "#{do self_closing.html} base command keygen source track wbr"
+    'html5': -> "#{do self_closing.html} base command keygen source track wbr main"
     'mobile' : ->  "#{do self_closing.xhtml}"
     'html-ce': ->  "#{do self_closing.xhtml}"
     'strict'  : -> "#{do self_closing.xhtml}"
