@@ -61,7 +61,9 @@ class Template extends EventEmitter
         return if opts.run is off
         process.nextTick @run
 
-    run: (template, opts) ->
+    run: (template, opts, {restart} = {}) ->
+        return if @started and not restart
+        @started = yes
         # load doctype if enabled
         if opts.doctype is on
             opts.doctype = opts._schema or 'html'
