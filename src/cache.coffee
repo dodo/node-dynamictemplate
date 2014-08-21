@@ -42,6 +42,10 @@ create = (key, opts) ->
     class ExtendedTag extends Tag
         partial: (partial) ->
             return this unless partial.run? # tag should be already added then
+            if partial.started
+                console.warn "partial already started!",
+                "you can delay it by adding option {partial:true} to your template"
+                return this
             @add(partial)
             partial.run() # guess this is a template
             return this
