@@ -29,6 +29,8 @@ exports.compose = (functions...) ->
         this
 
 # takes a function to create a clojure to call partial on an element
-exports.partialize = (partial, moargs...) ->
+exports.partialize = (create, moargs...) ->
     return (args...) ->
-        @partial partial.call(this, moargs..., args...)
+        partial = create.call(this, moargs..., args...)
+        @partial partial
+        return partial
