@@ -2,20 +2,22 @@
 # add class to the list of classes in attribute 'class'
 exports.addClass = (tag, classes...) ->
     return unless tag?.attr
-    tagclass = tag.attr('class') ? ""
-    for cls in classes
-        unless new RegExp(cls).test tagclass
-            tagclass = "#{cls} #{tagclass}"
-    tag.attr 'class', tagclass.replace(/\s\s/g, " ")
+    tagclasses = (tag.attr('class') ? "").split ' '
+    for cls in classes when tagclasses.indexOf(cls) is -1
+        tagclasses.push "#{cls}"
+    tag.attr 'class', tagclasses.join(' ').trim().replace(/\s\s/g, " ")
 
 # remove class from the list of classes in attribute 'class'
 exports.removeClass = (tag, classes...) ->
     return unless tag?.attr
-    tagclass = tag.attr('class') ? ""
+    tagclass = " #{tag.attr('class') ? ''} "
+    tagclasses = tagclass.trim().split ' '
     for cls in classes
-        if new RegExp(cls).test tagclass
-            tagclass = tagclass.replace(cls, "")
-    tag.attr 'class', tagclass
+        i = tagclasses.indexOf(cls)
+        unless i is -1
+            tagclasses[i] = ''
+            tagclass = tagclass.replace(" #{cls} ", " ")
+    tag.attr 'class', tagclass.trim()
 
 # run multiple functions in a row with the same this context
 exports.compose = (functions...) ->
