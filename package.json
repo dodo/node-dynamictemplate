@@ -12,7 +12,7 @@
     "prepublish": "cake build"}
 , "dependencies": {
     "bufferstream": ">= 0.6.0",
-    "asyncxml": ">= 0.5.1"}
+    "asyncxml": ">= 0.6.0"}
 , "peerDependencies": {
     "dt-stream": ">= 0.3.0"}
 , "devDependencies": {
